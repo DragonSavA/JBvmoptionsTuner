@@ -9,6 +9,7 @@ from typing import Callable, Tuple, Union, cast, override
 from uuid import uuid4
 
 from winrt.system import Array
+from winrt.windows.foundation import Uri
 from winrt.windows.ui.text import TextGetOptions, TextSetOptions
 from winrt.windows.ui.xaml.interop import TypeKind, TypeName
 from winui3.microsoft.ui.xaml import (
@@ -26,6 +27,7 @@ from winui3.microsoft.ui.xaml.controls import (
     Border,
     Button,
     ComboBox,
+    Image,
     InfoBar,
     InfoBarSeverity,
     ListView,
@@ -45,7 +47,8 @@ from winui3.microsoft.ui.xaml.markup import (
     XamlReader,
     XmlnsDefinition,
 )
-from winui3.microsoft.ui.xaml.media import SolidColorBrush
+from winui3.microsoft.ui.xaml.media import SolidColorBrush, Stretch
+from winui3.microsoft.ui.xaml.media.imaging import SvgImageSource
 from winui3.microsoft.ui.xaml.xamltypeinfo import XamlControlsXamlMetaDataProvider
 from winui3.microsoft.ui.windowing import OverlappedPresenter
 from winui3.microsoft.windows.applicationmodel.dynamicdependency.bootstrap import (
@@ -73,6 +76,7 @@ from .sync import (
 IGNORE_COMPATIBILITY = "-Didea.ignore.plugin.compatibility=true"
 ACCENT_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 GREEN = "#22C55E"
+ASSET_DIR = Path(__file__).with_name("assets")
 
 
 def color_tuple(value: str) -> tuple[int, int, int, int]:
@@ -233,6 +237,19 @@ class MainController:
         tile.width = size
         tile.height = size
         tile.corner_radius = (7, 7, 7, 7)
+        if product.icon:
+            icon_path = ASSET_DIR / product.icon
+            if icon_path.is_file():
+                image = Image()
+                image.width = size
+                image.height = size
+                image.stretch = Stretch.UNIFORM
+                image.source = SvgImageSource(Uri(icon_path.resolve().as_uri()))
+                tile.child = image
+                return tile
+
+        # JetBrains Client has no separate official icon in the product asset
+        # catalog, so it deliberately keeps the old monogram as a fallback.
         tile.background = brush(product.color)
         label = TextBlock()
         label.text = product.initials
@@ -383,6 +400,9 @@ class MainController:
             row.children.append(detail)
             item = ListViewItem()
             item.content = row
+            item.padding = (10, 8, 10, 8)
+            item.margin = (0, 2, 0, 2)
+            item.horizontal_content_alignment = HorizontalAlignment.STRETCH
             self.ide_list.items.append(item)
             self._ide_index_ids.append(ide_id)
             if ide_id == self._selected_ide_id:
@@ -486,6 +506,9 @@ class MainController:
             panel.children.append(icons)
             item = ListViewItem()
             item.content = panel
+            item.padding = (10, 8, 10, 8)
+            item.margin = (0, 2, 0, 2)
+            item.horizontal_content_alignment = HorizontalAlignment.STRETCH
             self.group_list.items.append(item)
             self._group_index_ids.append(group_id)
             if group_id == self._selected_group_id:

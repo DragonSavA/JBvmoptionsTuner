@@ -1,44 +1,59 @@
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid x:Name="Root">
+    <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel MaxWidth="1440" Margin="40,32,40,44" Spacing="26">
-                <Grid ColumnSpacing="24">
+                <Grid ColumnSpacing="28">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Spacing="6">
+                    <StackPanel Spacing="14" VerticalAlignment="Top">
                         <TextBlock Text="vmoptions Tuner" FontSize="32" FontWeight="SemiBold"/>
                         <TextBlock Text="Ваши настройки JetBrains IDE — на месте после каждого обновления."
                                    FontSize="16" Opacity="0.72" TextWrapping="Wrap"/>
+                        <Button x:Name="SyncAllTop" Content="Синхронизировать все"
+                                Padding="18,9" HorizontalAlignment="Left"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"
-                                VerticalAlignment="Center">
-                        <ComboBox x:Name="ThemePicker" Header="Тема" Width="150">
-                            <ComboBoxItem Content="Как в системе"/>
-                            <ComboBoxItem Content="Светлая"/>
-                            <ComboBoxItem Content="Тёмная"/>
-                        </ComboBox>
-                        <TextBox x:Name="AccentBox" Header="Акцент" Width="125" PlaceholderText="#00FF00"/>
-                        <Button x:Name="ApplyAppearanceButton" Content="Применить"
-                                VerticalAlignment="Bottom"/>
-                    </StackPanel>
-                </Grid>
-
-                <Grid ColumnSpacing="18">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ToggleSwitch x:Name="AutostartToggle" Header="Автозапуск" OnContent="Включён"
-                                  OffContent="Выключен" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="AutostartHint" Grid.Column="1" VerticalAlignment="Center"
-                               Opacity="0.7" TextWrapping="Wrap"/>
-                    <Button x:Name="SyncAllTop" Grid.Column="2" Content="Синхронизировать все"
-                            Padding="18,9"/>
+                    <Border Grid.Column="1"
+                            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="12" Padding="20,16">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="Настройки" FontSize="20" FontWeight="SemiBold"/>
+                            <Grid ColumnSpacing="20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="320"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Оформление" FontWeight="SemiBold"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <ComboBox x:Name="ThemePicker" Header="Тема" Width="145">
+                                            <ComboBoxItem Content="Как в системе"/>
+                                            <ComboBoxItem Content="Светлая"/>
+                                            <ComboBoxItem Content="Тёмная"/>
+                                        </ComboBox>
+                                        <TextBox x:Name="AccentBox" Header="Акцент" Width="120"
+                                                 PlaceholderText="#00FF00"/>
+                                        <Button x:Name="ApplyAppearanceButton" Content="Применить"
+                                                VerticalAlignment="Bottom"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Border Grid.Column="1"
+                                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        BorderThickness="1,0,0,0" Padding="20,0,0,0">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Автозапуск" FontWeight="SemiBold"/>
+                                        <ToggleSwitch x:Name="AutostartToggle" OnContent="Включён"
+                                                      OffContent="Выключен"/>
+                                        <TextBlock x:Name="AutostartHint" Opacity="0.7"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
                 <InfoBar x:Name="StatusInfo" IsOpen="False" IsClosable="True"/>
@@ -112,7 +127,8 @@
                                          PlaceholderText="Например: Общие параметры JVM"/>
                                 <TextBlock Text="Назначить IDE" FontWeight="SemiBold"/>
                                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                              VerticalScrollBarVisibility="Disabled">
+                                              VerticalScrollBarVisibility="Disabled"
+                                              Padding="2,2,2,4">
                                     <StackPanel x:Name="GroupIdeButtons" Orientation="Horizontal" Spacing="8"/>
                                 </ScrollViewer>
                                 <TextBox x:Name="GroupLinesBox" Header="Строки — по одной на строке"
@@ -143,7 +159,8 @@
                                        Opacity="0.7"/>
                         </StackPanel>
                         <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollBarVisibility="Disabled">
+                                      VerticalScrollBarVisibility="Disabled"
+                                      Padding="2,2,2,4">
                             <StackPanel x:Name="ViewerIdeButtons" Orientation="Horizontal" Spacing="8"/>
                         </ScrollViewer>
                         <TextBlock x:Name="ViewerPathText" FontFamily="Consolas" Opacity="0.72"
@@ -195,6 +212,12 @@
                     <Button x:Name="SyncAllBottom" Grid.Column="1" Content="Синхронизировать все"
                             Padding="18,9" VerticalAlignment="Center"/>
                 </Grid>
+                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                        BorderThickness="0,1,0,0" Padding="0,18,0,0">
+                    <TextBlock Text="Все права на товарные знаки и логотипы принадлежат их владельцам. Автор проекта не связан с правообладателями и не является их представителем."
+                               Opacity="0.62" FontSize="12" TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>

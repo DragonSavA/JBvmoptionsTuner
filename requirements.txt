@@ -9,6 +9,7 @@ winui3-Microsoft.UI.Xaml>=3.2.1,<4
 winui3-Microsoft.UI.Xaml.Controls>=3.2.1,<4
 winui3-Microsoft.UI.Xaml.Markup>=3.2.1,<4
 winui3-Microsoft.UI.Xaml.Media>=3.2.1,<4
+winui3-Microsoft.UI.Xaml.Media.Imaging>=3.2.1,<4
 winui3-Microsoft.UI.Xaml.XamlTypeInfo>=3.2.1,<4
 winui3-Microsoft.UI.Windowing>=3.2.1,<4
 winui3-Microsoft.Windows.ApplicationModel.DynamicDependency.Bootstrap>=3.2.1,<4

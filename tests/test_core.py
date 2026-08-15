@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import json
 import tempfile
+import tomllib
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from jetbrains_vmoptions_tuner import __version__
 from jetbrains_vmoptions_tuner.background import run_background
+from jetbrains_vmoptions_tuner.catalog import PRODUCTS
 from jetbrains_vmoptions_tuner.config import ConfigStore, default_config
 from jetbrains_vmoptions_tuner.sync import (
     TextFile,
@@ -99,6 +103,22 @@ class ConfigAndBackgroundTests(unittest.TestCase):
             self.assertEqual(second_timestamp, first_timestamp)
 
 
+class AssetsAndMetadataTests(unittest.TestCase):
+    def test_declared_product_icons_exist_and_are_valid_svg(self) -> None:
+        asset_dir = Path(__file__).parents[1] / "jetbrains_vmoptions_tuner" / "assets"
+        declared = {product.icon for product in PRODUCTS if product.icon}
+        available = {path.name for path in asset_dir.glob("*.svg")}
+        self.assertEqual(declared, available)
+        self.assertEqual([product.key for product in PRODUCTS if not product.icon], ["client"])
+        for icon in declared:
+            root = ET.parse(asset_dir / icon).getroot()
+            self.assertTrue(root.tag.endswith("svg"))
+
+    def test_package_versions_match(self) -> None:
+        project_path = Path(__file__).parents[1] / "pyproject.toml"
+        project = tomllib.loads(project_path.read_text(encoding="utf-8"))
+        self.assertEqual(project["project"]["version"], __version__)
+
+
 if __name__ == "__main__":
     unittest.main()
-
