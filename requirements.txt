@@ -1,0 +1,14 @@
+# PyWinRT 3.2.1 provides CPython wheels for Windows x64, x86 and ARM64.
+winrt-runtime>=3.2.1,<4
+winrt-Windows.Foundation>=3.2.1,<4
+winrt-Windows.Foundation.Collections>=3.2.1,<4
+winrt-Windows.UI>=3.2.1,<4
+winrt-Windows.UI.Text>=3.2.1,<4
+winrt-Windows.UI.Xaml.Interop>=3.2.1,<4
+winui3-Microsoft.UI.Xaml>=3.2.1,<4
+winui3-Microsoft.UI.Xaml.Controls>=3.2.1,<4
+winui3-Microsoft.UI.Xaml.Markup>=3.2.1,<4
+winui3-Microsoft.UI.Xaml.Media>=3.2.1,<4
+winui3-Microsoft.UI.Xaml.XamlTypeInfo>=3.2.1,<4
+winui3-Microsoft.UI.Windowing>=3.2.1,<4
+winui3-Microsoft.Windows.ApplicationModel.DynamicDependency.Bootstrap>=3.2.1,<4
