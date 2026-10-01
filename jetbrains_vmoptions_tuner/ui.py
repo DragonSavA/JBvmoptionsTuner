@@ -56,7 +56,7 @@ from winui3.microsoft.windows.applicationmodel.dynamicdependency.bootstrap impor
     initialize,
 )
 
-from . import autostart
+from . import __version__, autostart, desktop_shortcut
 from .catalog import PRODUCTS, PRODUCT_BY_KEY, Product
 from .config import ConfigStore
 from .native_picker import choose_vmoptions_file
@@ -114,6 +114,7 @@ class MainController:
         self.config = self.store.load()
         self._handlers: list[Callable[..., None]] = []
         self._setting_autostart = False
+        self._setting_desktop_shortcut = False
         self._loading_editor = False
         self._selected_ide_id: str | None = None
         self._selected_group_id: str | None = None
@@ -133,6 +134,12 @@ class MainController:
         self.apply_appearance_button = self._find(root, "ApplyAppearanceButton", Button)
         self.autostart_toggle = self._find(root, "AutostartToggle", ToggleSwitch)
         self.autostart_hint = self._find(root, "AutostartHint", TextBlock)
+        self.desktop_shortcut_toggle = self._find(root, "DesktopShortcutToggle", ToggleSwitch)
+        self.desktop_shortcut_hint = self._find(root, "DesktopShortcutHint", TextBlock)
+        self._find(root, "AppIcon", Image).source = SvgImageSource(
+            Uri(desktop_shortcut.APP_SVG.as_uri())
+        )
+        self._find(root, "VersionText", TextBlock).text = __version__
         self.status_info = self._find(root, "StatusInfo", InfoBar)
         self.sync_all_top = self._find(root, "SyncAllTop", Button)
         self.sync_all_bottom = self._find(root, "SyncAllBottom", Button)
@@ -188,6 +195,7 @@ class MainController:
         self._populate_product_picker()
         self._bind(self.apply_appearance_button.add_click, self.on_apply_appearance)
         self._bind(self.autostart_toggle.add_toggled, self.on_autostart_toggled)
+        self._bind(self.desktop_shortcut_toggle.add_toggled, self.on_desktop_shortcut_toggled)
         self._bind(self.sync_all_top.add_click, self.on_sync_all)
         self._bind(self.sync_all_bottom.add_click, self.on_sync_all)
         self._bind(self.ide_list.add_selection_changed, self.on_ide_selected)
@@ -207,11 +215,18 @@ class MainController:
         self._bind(self.discard_file_button.add_click, self.on_discard_file)
 
         first_run_message = self._ensure_first_run_autostart()
+        desktop_message = None
+        try:
+            desktop_shortcut.reconcile(self.config, self.entry_script)
+        except OSError as error:
+            desktop_message = f"Не удалось обновить иконку на рабочем столе: {error}"
         self._load_appearance()
         self._refresh_autostart()
+        self._refresh_desktop_shortcut()
         self.refresh_all()
-        if first_run_message:
-            self.show_status(first_run_message, InfoBarSeverity.WARNING, "Автозапуск")
+        messages = [message for message in (first_run_message, desktop_message) if message]
+        if messages:
+            self.show_status("\n".join(messages), InfoBarSeverity.WARNING, "Настройки запуска")
 
     def _ensure_first_run_autostart(self) -> str | None:
         settings = self.config["settings"]
@@ -339,6 +354,38 @@ class MainController:
         self._refresh_autostart()
         self.show_status(
             "Автозапуск включён." if self.autostart_toggle.is_on else "Автозапуск выключен.",
+            InfoBarSeverity.SUCCESS,
+        )
+
+    def _refresh_desktop_shortcut(self) -> None:
+        self._setting_desktop_shortcut = True
+        try:
+            try:
+                enabled = desktop_shortcut.is_enabled()
+            except OSError:
+                enabled = False
+            self.desktop_shortcut_toggle.is_on = enabled
+            self.desktop_shortcut_hint.text = (
+                "Ярлык запускает приложение через start.bat."
+                if enabled
+                else "Приложение можно запустить через start.bat или main.py."
+            )
+        finally:
+            self._setting_desktop_shortcut = False
+
+    def on_desktop_shortcut_toggled(self, _sender, _args) -> None:
+        if self._setting_desktop_shortcut:
+            return
+        try:
+            desktop_shortcut.set_enabled(
+                self.desktop_shortcut_toggle.is_on, self.config, self.store, self.entry_script
+            )
+        finally:
+            self._refresh_desktop_shortcut()
+        self.show_status(
+            "Иконка на рабочем столе создана."
+            if self.desktop_shortcut_toggle.is_on
+            else "Иконка на рабочем столе удалена.",
             InfoBarSeverity.SUCCESS,
         )
 
@@ -814,6 +861,7 @@ class App(Application, IXamlMetadataProvider):
         xaml = Path(__file__).with_name("main_window.xaml").read_text(encoding="utf-8")
         window = XamlReader.load(xaml).as_(Window)
         window.title = "vmoptions Tuner"
+        window.app_window.set_icon(str(desktop_shortcut.APP_ICON))
         self._window = window
         self._controller = MainController(window, ConfigStore(), self._entry_script)
         self._controller.initialize()

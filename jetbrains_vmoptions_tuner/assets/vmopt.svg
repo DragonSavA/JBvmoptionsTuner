@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">vmoptions Tuner — VMopT</title>
+  <desc id="desc">An original multicolour geometric icon with a central black square and white VMopT lettering.</desc>
+  <defs>
+    <linearGradient id="warm" x1="43" y1="0" x2="176" y2="85" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0EB18"/>
+      <stop offset=".18" stop-color="#FFDC52"/>
+      <stop offset=".36" stop-color="#FFAB00"/>
+      <stop offset=".52" stop-color="#FC801D"/>
+      <stop offset=".7" stop-color="#FE2857"/>
+      <stop offset=".85" stop-color="#FF2D90"/>
+      <stop offset="1" stop-color="#BE46FF"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="15" x2="178" y2="137" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F9ED32"/>
+      <stop offset=".3" stop-color="#85D970"/>
+      <stop offset=".6" stop-color="#21D789"/>
+      <stop offset=".8" stop-color="#00D886"/>
+      <stop offset="1" stop-color="#18BBB7"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="148" y1="0" x2="256" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D6F8F8"/>
+      <stop offset=".15" stop-color="#8DFDFD"/>
+      <stop offset=".35" stop-color="#74D6F4"/>
+      <stop offset=".52" stop-color="#07C3F2"/>
+      <stop offset=".7" stop-color="#00C4F4"/>
+      <stop offset="1" stop-color="#087CFA"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="247" y1="117" x2="71" y2="256" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#48BFF1"/>
+      <stop offset=".25" stop-color="#009AE5"/>
+      <stop offset=".45" stop-color="#007DFE"/>
+      <stop offset=".65" stop-color="#0038FF"/>
+      <stop offset=".8" stop-color="#0500FF"/>
+      <stop offset="1" stop-color="#7256FF"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="17" y1="236" x2="239" y2="192" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B57FF"/>
+      <stop offset=".3" stop-color="#BE46FF"/>
+      <stop offset=".52" stop-color="#D249FC"/>
+      <stop offset=".72" stop-color="#FD3AF5"/>
+      <stop offset="1" stop-color="#FE62EE"/>
+    </linearGradient>
+    <linearGradient id="pink" x1="0" y1="214" x2="111" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF43F2"/>
+      <stop offset=".25" stop-color="#FF00D6"/>
+      <stop offset=".5" stop-color="#FF0A67"/>
+      <stop offset=".72" stop-color="#FF004C"/>
+      <stop offset="1" stop-color="#FF8100"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#warm)" d="M0 0H256V256H0Z"/>
+  <path fill="url(#green)" d="M0 0H177L203 65 58 148 0 84Z"/>
+  <path fill="url(#cyan)" d="M166 0H256V178L180 212 145 89Z"/>
+  <path fill="url(#blue)" d="M256 92V256H63L105 181 221 91Z"/>
+  <path fill="url(#violet)" d="M0 200 106 142 256 220V256H0Z"/>
+  <path fill="url(#pink)" d="M0 75 82 34 124 98 90 204 0 229Z"/>
+  <path fill="url(#warm)" d="M43 0H119L176 55 135 85 85 49Z"/>
+  <path fill="#FFFFFF" opacity=".12" d="M0 0 256 178V199L0 32Z"/>
+  <path fill="#FFFFFF" opacity=".1" d="M179 0H207L95 256H72Z"/>
+  <path fill="#000000" d="M56 56H200V200H56Z"/>
+  <!-- Lettering is vector geometry so WinUI's SVG renderer needs no fonts. -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linejoin="miter">
+    <path d="m70 106 9 29 9-29m8 31v-29l10 19 10-19v29"/>
+    <rect x="124" y="116" width="15" height="20" rx="7.5"/>
+    <path d="M147 148v-31h7.5a8 8 0 0 1 0 19H147m18-28h22m-11-1v30"/>
+  </g>
+  <path fill="#FFFFFF" d="M70 174H111V179H70Z"/>
+</svg>

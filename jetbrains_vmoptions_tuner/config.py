@@ -21,6 +21,7 @@ def default_config() -> dict[str, Any]:
         "settings": {
             "theme": "system",
             "accent_color": "#4F7CFF",
+            "desktop_shortcut": True,
             "first_run_completed": False,
         },
         "ides": [],
@@ -52,6 +53,9 @@ def _merge_and_sanitize(raw: object) -> dict[str, Any]:
         accent = settings.get("accent_color")
         if isinstance(accent, str):
             cfg["settings"]["accent_color"] = accent
+        desktop_shortcut = settings.get("desktop_shortcut")
+        if isinstance(desktop_shortcut, bool):
+            cfg["settings"]["desktop_shortcut"] = desktop_shortcut
         cfg["settings"]["first_run_completed"] = bool(
             settings.get("first_run_completed", False)
         )
@@ -103,4 +107,3 @@ class ConfigStore:
             except OSError:
                 pass
             raise
-

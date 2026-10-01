@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import tempfile
 import tomllib
 import unittest
@@ -104,11 +105,29 @@ class ConfigAndBackgroundTests(unittest.TestCase):
 
 
 class AssetsAndMetadataTests(unittest.TestCase):
+    def test_application_icon_has_valid_svg_and_all_windows_sizes(self) -> None:
+        asset_dir = Path(__file__).parents[1] / "jetbrains_vmoptions_tuner" / "assets"
+        self.assertTrue(ET.parse(asset_dir / "vmopt.svg").getroot().tag.endswith("svg"))
+        icon = (asset_dir / "vmopt.ico").read_bytes()
+        reserved, kind, count = struct.unpack_from("<HHH", icon)
+        self.assertEqual((reserved, kind, count), (0, 1, 7))
+        sizes = []
+        for index in range(count):
+            width, height, _, _, _, _, length, offset = struct.unpack_from(
+                "<BBBBHHII", icon, 6 + index * 16
+            )
+            self.assertEqual(width, height)
+            sizes.append(width or 256)
+            image = icon[offset : offset + length]
+            self.assertEqual(image[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack_from(">II", image, 16), (width or 256, height or 256))
+        self.assertEqual(sizes, [16, 24, 32, 48, 64, 128, 256])
+
     def test_declared_product_icons_exist_and_are_valid_svg(self) -> None:
         asset_dir = Path(__file__).parents[1] / "jetbrains_vmoptions_tuner" / "assets"
         declared = {product.icon for product in PRODUCTS if product.icon}
         available = {path.name for path in asset_dir.glob("*.svg")}
-        self.assertEqual(declared, available)
+        self.assertEqual(declared, available - {"vmopt.svg"})
         self.assertEqual([product.key for product in PRODUCTS if not product.icon], ["client"])
         for icon in declared:
             root = ET.parse(asset_dir / icon).getroot()

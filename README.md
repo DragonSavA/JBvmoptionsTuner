@@ -1,97 +1,335 @@
-# JetBrains vmoptions Tuner
+<p align="center">
+  <img src="jetbrains_vmoptions_tuner/assets/vmopt.svg" width="128" height="128" alt="vmoptions Tuner — VMopT">
+</p>
 
-Небольшое Windows 11-приложение на Python и WinUI 3 (PyWinRT), которое хранит
-назначенные пользователем строки `.vmoptions`, восстанавливает их после
-обновлений IDE и позволяет редактировать сами файлы.
+# vmoptions Tuner
 
-## Что реализовано
+**Version: 1.0.0-RC1** · [English](#english) · [Русский](#русский)
 
-- связки «продукт JetBrains → выбранный вручную `.vmoptions`» без discovery;
-- текущие JetBrains IDE, Android Studio, MPS/Gateway/Client и legacy-продукты;
-- официальные SVG-иконки продуктов (для JetBrains Client используется
-  резервная монограмма);
-- общие наборы строк для нескольких IDE с правилом «одна IDE — один набор»;
-- кнопка добавления `-Didea.ignore.plugin.compatibility=true`;
-- проверка непустых строк на начальный `-` и устранение дубликатов;
-- горизонтальный список IDE и редактируемый `RichEditBox` с зелёной
-  подсветкой строк назначенного набора;
-- предупреждения о недостающих строках и несохранённых ручных изменениях;
-- ручная синхронизация одного/всех файлов и тихая синхронизация при входе;
-- первая регистрация в `HKCU\...\Run`, отображение и переключение автозапуска;
-- JSON в `%LOCALAPPDATA%\JetBrainsVmoptionsTuner\config.json`;
-- системная, светлая и тёмная темы, произвольный акцент `#RRGGBB` без
-  перезапуска;
-- сохранение UTF-8 BOM, CRLF/LF и исходного ANSI-кодирования файла.
+## English
 
-## Запуск в PyCharm
+A Windows 11 application that edits JetBrains `.vmoptions` files and restores your
+assigned JVM options after IDE updates. Built with Python and WinUI 3 (PyWinRT).
+The interface is currently in Russian.
 
-Нужны Windows 11 и обычный 64-битный CPython 3.12–3.14 с python.org. Версия из
-Microsoft Store не подходит для unpackaged WinUI 3 bootstrap.
+Supports current and legacy JetBrains products, Android Studio, MPS, Gateway and
+JetBrains Client. Each product can be bound to a manually selected `.vmoptions` file.
 
-1. Откройте корень проекта в PyCharm.
-2. Создайте virtualenv на CPython 3.13 или 3.14.
-3. Выполните:
+### Installation and launch
+
+1. [Download the project ZIP](https://github.com/DragonSavA/JBvmotionsTuner/archive/HEAD.zip)
+   using **Code → Download ZIP** on GitHub, or clone the repository:
 
    ```powershell
-   python -m pip install --upgrade pip
-   python -m pip install -r requirements.txt
+   git clone https://github.com/DragonSavA/JBvmotionsTuner.git
    ```
 
-4. Запустите `main.py` без аргументов.
+2. Extract the **entire** ZIP into a folder you can write to, such as
+   `C:\Tools\JBvmotionsTuner`. Keep all files and folders together; running directly
+   inside the ZIP will not work.
+3. Open that folder and double-click **`start.bat`**. An IDE and a preinstalled
+   Python are not required. Internet access is needed to download missing dependencies.
+4. Wait for setup to finish. The application window then opens. If Windows asks for
+   permission to install a prerequisite, complete the installation.
 
-PyWinRT при отсутствии совместимого Windows App Runtime покажет штатное окно
-его установки. Для управляемой установки можно заранее установить актуальный
-стабильный Windows App Runtime с сайта Microsoft.
+The launcher performs the following checks on every run:
 
-Первый запуск регистрирует текущий `pythonw.exe`, абсолютный путь к `main.py` и
-аргумент `--background`. Поэтому не переносите проект или virtualenv после
-включения автозапуска; если перенесли — выключите и снова включите тумблер в UI.
+- Reuses the project’s compatible `.venv`, or searches `PATH`, the Python launcher /
+  Python Install Manager and Windows’ Python registrations for standard
+  **CPython 3.13 or newer**. It chooses the newest usable installed interpreter.
+  Store Python runtimes and experimental free-threaded builds are excluded;
+  runtimes installed by Python Install Manager are supported.
+- If no suitable interpreter is available, installs CPython 3.13 for the current
+  user through WinGet. If WinGet is unavailable or fails, it downloads an official
+  python.org installer and verifies its digital signature.
+- Creates `.venv` beside `start.bat`; dependencies go into this environment.
+  An incompatible or broken existing `.venv` is preserved as `.venv.backup-…`
+  before a replacement is created.
+- Checks every dependency in `requirements.txt`, installs missing or incompatible
+  packages, and checks their consistency. It also checks and, if necessary,
+  installs the **Windows App Runtime release required by the installed PyWinRT**.
+  The fallback runtime installer comes from Microsoft and its signature is checked.
+- Creates or updates the **vmoptions Tuner** desktop shortcut when its setting is
+  enabled. The shortcut launches `start.bat` and uses the application’s icon.
 
-Тихий режим можно проверить вручную:
+After setup, already satisfied Python dependencies need no download. To launch
+again, use the desktop shortcut, double-click `start.bat`, or run:
 
 ```powershell
-python main.py --background
+python "C:\Tools\JBvmotionsTuner\main.py"
 ```
 
-## Проверка ядра
+Direct launch automatically uses the `.venv` prepared by `start.bat`, even if your
+shell selects another Python installation. If you skip the batch setup entirely,
+use CPython 3.13+ with `requirements.txt` installed and a compatible Windows App
+Runtime. See the [Python Windows documentation](https://docs.python.org/3/using/windows.html)
+and [Windows App Runtime deployment guide](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged-apps).
 
-Тесты не загружают WinUI и выполняются на любой ОС:
+If setup installed Python, open a new terminal before using the `python` command
+so it picks up the updated user `PATH`.
+
+### First use and settings
+
+1. Under **IDE и файлы**, select a product and choose its `.vmoptions` file manually.
+   The application does not search for IDE installations.
+2. Under **Наборы строк**, create an option set, enter one option per
+   line, and assign it to one or more IDEs. Every nonempty line must start with `-`;
+   duplicate lines are removed. Each IDE belongs to at most one set.
+3. Use **Синхронизировать все** or select an IDE in the editor and synchronize its
+   file. Missing assigned lines are appended. Existing options are kept.
+
+The editor shows the full file, highlights assigned lines in green and warns about
+missing lines and unsaved edits. Save or discard manual edits before synchronizing.
+There is also a button to add `-Didea.ignore.plugin.compatibility=true` to a set.
+
+Both startup options are enabled by default and work independently:
+
+| Setting | Enabled | Disabled |
+| --- | --- | --- |
+| **Автозапуск** (Autostart) | Runs one silent synchronization when you sign in to Windows. | Removes the app’s current-user Run registration. |
+| **Иконка на рабочем столе** (Desktop icon) | Creates a desktop shortcut to `start.bat`. | Removes that shortcut and remembers your choice across launches. |
+
+The desktop shortcut setting also applies to a redirected / OneDrive desktop.
+Removing the shortcut never prevents launching through `start.bat` or `main.py`.
+While enabled, a missing shortcut is restored on the next launch. You can also
+select the system, light or dark theme and set an accent colour as `#RRGGBB`.
+
+### Files, updates and limitations
+
+- Settings, IDE paths, option sets and the desktop shortcut preference are stored
+  in `%LOCALAPPDATA%\JetBrainsVmoptionsTuner\config.json`, outside the repository.
+- Autostart uses
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\JetBrainsVmoptionsTuner`
+  and launches `pythonw.exe main.py --background` using absolute paths.
+- Keep the project in its final location. After moving it, run `start.bat` in the
+  new location and switch autostart off and on to refresh its registered paths.
+  If the old shortcut remains on your desktop, launch the moved batch file directly.
+- To update, replace the project files in the same folder and run `start.bat` again.
+  Keep your `.venv`; the launcher will check dependencies. Your settings stay in
+  Local AppData. `1.0.0-RC1` also reads configurations from earlier versions.
+- The application runs with your current permissions. Pick a `.vmoptions` file you
+  can write to; no permissions are elevated to edit IDE files. Synchronization
+  preserves UTF-8 BOM, CRLF/LF and the original ANSI encoding.
+- Background synchronization runs once at sign-in. During a session, use manual
+  synchronization or reopen the application; there is no continuous file watcher.
+- Restoring a required line does not remove competing options elsewhere in the
+  file. Check the final JVM options, especially repeated memory settings, yourself.
+
+To run a silent synchronization manually after setup:
 
 ```powershell
-python -m unittest discover -s tests -v
+python "C:\Tools\JBvmotionsTuner\main.py" --background
 ```
 
-## Структура
+### Development and verification
 
-- `main.py` — выбор обычного или фонового режима;
-- `jetbrains_vmoptions_tuner/ui.py` и `main_window.xaml` — WinUI 3;
-- `sync.py` — безопасное чтение, сравнение и атомарная запись;
-- `config.py` — JSON-схема и атомарное сохранение;
-- `autostart.py` — пользовательский ключ Windows Run;
-- `background.py` — синхронизация без импорта UI;
-- `catalog.py` и `assets/` — каталог продуктов и их SVG-иконки.
+Open the folder in PyCharm and select `.venv\Scripts\python.exe` as the interpreter
+after running `start.bat`. Alternatively, create your own CPython 3.13+ environment
+and install `requirements.txt`.
 
-## Важные ограничения
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_launcher.ps1 -PythonExecutable "$PWD\.venv\Scripts\python.exe"
+.\start.bat -PrepareOnly
+```
 
-- У приложения нет повышения прав. `.vmoptions` должен быть доступен текущему
-  пользователю на запись; для защищённых каталогов Windows вернёт понятную
-  ошибку в интерфейсе.
-- Фоновая синхронизация запускается один раз при входе. Для обновления уже во
-  время текущего сеанса используйте кнопку синхронизации или перезапустите
-  приложение.
+Core tests also run outside Windows; Windows shell tests are skipped there.
+`-PrepareOnly` checks prerequisites and applies the desktop shortcut preference
+without opening the window. The remaining UI checks are in
+[WINDOWS_VERIFICATION.md](WINDOWS_VERIFICATION.md).
 
-Windows-проверки перед первым постоянным использованием перечислены в
-`WINDOWS_VERIFICATION.md`.
+`vmopt.svg` is the original source for the application icon. To regenerate the
+multi-size Windows ICO with Microsoft Edge and Windows’ built-in drawing tools:
 
-## Товарные знаки
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_icon.ps1
+```
 
-Copyright © 2026 JetBrains s.r.o. Названия продуктов JetBrains и их логотипы
-являются товарными знаками JetBrains s.r.o. Android Studio и его логотип
-являются товарными знаками Google LLC. Все прочие права на товарные знаки и
-логотипы принадлежат их владельцам.
+| File / folder | Purpose |
+| --- | --- |
+| `start.bat`, `scripts/launch.ps1` | Python discovery, environment setup and launch |
+| `main.py`, `bootstrap.py` | Direct/background entry point and prerequisite checks |
+| `ui.py`, `main_window.xaml` | WinUI 3 interface |
+| `desktop_shortcut.py`, `autostart.py` | Desktop shortcut and sign-in registration |
+| `sync.py`, `config.py`, `background.py` | File synchronization, settings and silent execution |
+| `catalog.py`, `assets/` | Product catalogue, product icons and the application icon |
 
-Иконки используются только для идентификации соответствующих продуктов. Автор
-проекта не связан с правообладателями, не является их представителем и не
-получал от них одобрения или спонсорской поддержки. Источники ассетов и условия
-их использования перечислены в
-[`jetbrains_vmoptions_tuner/assets/README.md`](jetbrains_vmoptions_tuner/assets/README.md).
+### License and trademarks
+
+Application code and the original **VMopT** icon are covered by the [MIT license](LICENSE).
+Product icons have separate terms listed in
+[assets/README.md](jetbrains_vmoptions_tuner/assets/README.md).
+
+Copyright © 2026 JetBrains s.r.o. JetBrains product names and logos are trademarks
+of JetBrains s.r.o. Android Studio and its logo are trademarks of Google LLC.
+Other trademarks belong to their respective owners. Product icons are used to
+identify their products. This independent project is not affiliated with,
+endorsed by or sponsored by JetBrains, Google or other trademark owners.
+
+## Русский
+
+Приложение для Windows 11, которое редактирует файлы `.vmoptions` продуктов
+JetBrains и восстанавливает назначенные параметры JVM после обновлений IDE.
+Написано на Python и WinUI 3 (PyWinRT). Интерфейс — на русском языке.
+
+Поддерживаются актуальные и прежние продукты JetBrains, Android Studio, MPS,
+Gateway и JetBrains Client. Для каждого продукта `.vmoptions` выбирается вручную.
+
+### Установка и запуск
+
+1. [Скачайте ZIP проекта](https://github.com/DragonSavA/JBvmotionsTuner/archive/HEAD.zip)
+   через **Code → Download ZIP** на GitHub или клонируйте репозиторий:
+
+   ```powershell
+   git clone https://github.com/DragonSavA/JBvmotionsTuner.git
+   ```
+
+2. Распакуйте **весь** архив в папку, доступную вам на запись, например
+   `C:\Tools\JBvmotionsTuner`. Сохраните все файлы и подпапки вместе: запуск изнутри
+   ZIP-архива не поддерживается.
+3. Откройте эту папку и дважды щёлкните **`start.bat`**. IDE и заранее установленный
+   Python не требуются. Для скачивания недостающих зависимостей нужен интернет.
+4. Дождитесь завершения настройки — откроется окно приложения. Если Windows
+   запросит разрешение на установку необходимого компонента, завершите установку.
+
+При каждом запуске файл проверяет окружение:
+
+- Использует совместимую `.venv` проекта либо ищет обычный **CPython 3.13 или
+  новее** в `PATH`, через Python Launcher / Python Install Manager и в регистрациях
+  Python в Windows. Выбирает самый новый подходящий установленный интерпретатор.
+  Среды Python из Microsoft Store и экспериментальные сборки без GIL исключены;
+  среды, установленные через Python Install Manager, поддерживаются.
+- Если подходящего Python нет, устанавливает CPython 3.13 для текущего пользователя
+  через WinGet. Если WinGet недоступен или установка не удалась, скачивает
+  официальный установщик с python.org и проверяет его цифровую подпись.
+- Создаёт `.venv` рядом с `start.bat` и устанавливает зависимости в неё. При
+  обнаружении несовместимой или повреждённой `.venv` сохраняет её в
+  `.venv.backup-…`, затем создаёт новую.
+- Проверяет все зависимости из `requirements.txt`, устанавливает недостающие
+  или несовместимые пакеты и проверяет их согласованность. Также проверяет и
+  при необходимости устанавливает **версию Windows App Runtime, требуемую
+  установленным PyWinRT**. Резервный установщик скачивается с сайта Microsoft;
+  его цифровая подпись проверяется.
+- Создаёт или обновляет ярлык **vmoptions Tuner** на рабочем столе, если настройка
+  включена. Ярлык вызывает `start.bat` и использует иконку приложения.
+
+После настройки уже установленные подходящие Python-зависимости не требуют
+скачивания. Для следующих запусков используйте ярлык, `start.bat` или команду:
+
+```powershell
+python "C:\Tools\JBvmotionsTuner\main.py"
+```
+
+Прямой запуск автоматически использует `.venv`, подготовленную `start.bat`, даже
+если в вашей оболочке выбран другой Python. Если вы полностью пропускаете настройку
+через `.bat`, нужен CPython 3.13+ с установленным `requirements.txt` и совместимый
+Windows App Runtime. Подробности:
+[Python в Windows](https://docs.python.org/3/using/windows.html) и
+[установка Windows App Runtime](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged-apps).
+
+Если Python установился во время настройки, откройте новый терминал перед
+использованием команды `python`, чтобы он получил обновлённый пользовательский `PATH`.
+
+### Первое использование и настройки
+
+1. В блоке **IDE и файлы** выберите продукт и вручную укажите его `.vmoptions`.
+   Автоматического поиска установленных IDE нет.
+2. В блоке **Наборы строк** создайте набор, впишите параметры по одному
+   на строке и назначьте одну или несколько IDE. Каждая непустая строка должна
+   начинаться с `-`; дубликаты удаляются. Одной IDE можно назначить только один набор.
+3. Нажмите **Синхронизировать все** либо выберите IDE в редакторе и синхронизируйте
+   её файл. Недостающие строки набора добавляются в конец; существующие сохраняются.
+
+Редактор показывает весь файл, подсвечивает назначенные строки зелёным и
+предупреждает о недостающих параметрах и несохранённых изменениях. Перед
+синхронизацией сохраните или отмените ручные правки. Кнопкой можно добавить в набор
+`-Didea.ignore.plugin.compatibility=true`.
+
+Обе настройки запуска изначально включены и работают независимо:
+
+| Настройка | Включена | Выключена |
+| --- | --- | --- |
+| **Автозапуск** | Выполняет одну тихую синхронизацию при входе в Windows. | Удаляет регистрацию приложения в пользовательском ключе Run. |
+| **Иконка на рабочем столе** | Создаёт ярлык, вызывающий `start.bat`. | Удаляет ярлык и сохраняет выбор между запусками. |
+
+Рабочий стол может быть перенаправлен, в том числе в OneDrive — ярлык создаётся
+в его фактической папке. Удаление ярлыка не мешает запуску через `start.bat` или
+`main.py`. Если настройка включена, удалённый вручную ярлык восстановится при
+следующем запуске. Можно выбрать системную, светлую или тёмную тему и акцентный
+цвет в формате `#RRGGBB`.
+
+### Данные, обновления и ограничения
+
+- Настройки, пути к IDE, наборы строк и состояние тумблера ярлыка хранятся вне
+  репозитория: `%LOCALAPPDATA%\JetBrainsVmoptionsTuner\config.json`.
+- Автозапуск регистрируется в
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\JetBrainsVmoptionsTuner`
+  и вызывает `pythonw.exe main.py --background` с абсолютными путями.
+- Сразу выберите постоянную папку проекта. После переноса запустите `start.bat`
+  из новой папки и выключите/включите автозапуск, чтобы обновить пути в реестре.
+  Если на рабочем столе остался старый ярлык, сначала запустите перенесённый `.bat`
+  напрямую.
+- Для обновления замените файлы проекта в той же папке и снова запустите
+  `start.bat`. Сохраните `.venv`: файл запуска проверит зависимости. Настройки
+  остаются в Local AppData. Версия `1.0.0-RC1` читает конфигурации прежних версий.
+- Приложение работает с вашими текущими правами. Выбирайте `.vmoptions`, доступный
+  вам на запись; приложение не повышает права для редактирования файлов IDE.
+  Синхронизация сохраняет UTF-8 BOM, CRLF/LF и исходное ANSI-кодирование.
+- Фоновая синхронизация выполняется один раз при входе. В течение сеанса
+  используйте ручную синхронизацию или откройте приложение заново: постоянного
+  наблюдения за файлами нет.
+- Восстановление обязательной строки не удаляет конкурирующие параметры в других
+  строках файла. Проверяйте итоговые параметры JVM, особенно повторяющиеся
+  настройки памяти.
+
+Тихую синхронизацию после установки можно вызвать вручную:
+
+```powershell
+python "C:\Tools\JBvmotionsTuner\main.py" --background
+```
+
+### Разработка и проверка
+
+После запуска `start.bat` откройте папку в PyCharm и выберите интерпретатор
+`.venv\Scripts\python.exe`. Можно также создать своё окружение CPython 3.13+
+и установить `requirements.txt`.
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_launcher.ps1 -PythonExecutable "$PWD\.venv\Scripts\python.exe"
+.\start.bat -PrepareOnly
+```
+
+Тесты ядра работают и вне Windows; проверки Windows Shell там пропускаются.
+Режим `-PrepareOnly` проверяет зависимости и применяет настройку ярлыка, не
+открывая окно. Остальные проверки интерфейса описаны в
+[WINDOWS_VERIFICATION.md](WINDOWS_VERIFICATION.md).
+
+Исходник иконки — `vmopt.svg`. Для пересоздания Windows ICO с несколькими размерами
+используются Microsoft Edge и встроенные средства рисования Windows:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_icon.ps1
+```
+
+| Файл / папка | Назначение |
+| --- | --- |
+| `start.bat`, `scripts/launch.ps1` | Поиск Python, подготовка окружения и запуск |
+| `main.py`, `bootstrap.py` | Прямой/фоновый запуск и проверка зависимостей |
+| `ui.py`, `main_window.xaml` | Интерфейс WinUI 3 |
+| `desktop_shortcut.py`, `autostart.py` | Ярлык и регистрация запуска при входе |
+| `sync.py`, `config.py`, `background.py` | Синхронизация файлов, настройки и тихий режим |
+| `catalog.py`, `assets/` | Каталог продуктов, их иконки и иконка приложения |
+
+### Лицензия и товарные знаки
+
+Код приложения и оригинальная иконка **VMopT** распространяются по
+[лицензии MIT](LICENSE). Для иконок продуктов действуют отдельные условия,
+перечисленные в [assets/README.md](jetbrains_vmoptions_tuner/assets/README.md).
+
+Copyright © 2026 JetBrains s.r.o. Названия продуктов JetBrains и их логотипы —
+товарные знаки JetBrains s.r.o. Android Studio и его логотип — товарные знаки
+Google LLC. Прочие товарные знаки принадлежат их владельцам. Иконки продуктов
+используются для их идентификации. Проект независимый; автор не связан с
+JetBrains, Google и другими правообладателями, не является их представителем
+и не получал их одобрения или спонсорской поддержки.

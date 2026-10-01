@@ -10,7 +10,13 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="14" VerticalAlignment="Top">
-                        <TextBlock Text="vmoptions Tuner" FontSize="32" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Spacing="14">
+                            <Image x:Name="AppIcon" Width="56" Height="56"/>
+                            <StackPanel Spacing="2" VerticalAlignment="Center">
+                                <TextBlock Text="vmoptions Tuner" FontSize="32" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="VersionText" FontSize="12" Opacity="0.62"/>
+                            </StackPanel>
+                        </StackPanel>
                         <TextBlock Text="Ваши настройки JetBrains IDE — на месте после каждого обновления."
                                    FontSize="16" Opacity="0.72" TextWrapping="Wrap"/>
                         <Button x:Name="SyncAllTop" Content="Синхронизировать все"
@@ -48,6 +54,12 @@
                                         <ToggleSwitch x:Name="AutostartToggle" OnContent="Включён"
                                                       OffContent="Выключен"/>
                                         <TextBlock x:Name="AutostartHint" Opacity="0.7"
+                                                   TextWrapping="Wrap"/>
+                                        <TextBlock Text="Иконка на рабочем столе" FontWeight="SemiBold"
+                                                   Margin="0,8,0,0"/>
+                                        <ToggleSwitch x:Name="DesktopShortcutToggle" OnContent="Включена"
+                                                      OffContent="Выключена"/>
+                                        <TextBlock x:Name="DesktopShortcutHint" Opacity="0.7"
                                                    TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </Border>
