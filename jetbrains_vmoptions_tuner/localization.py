@@ -102,8 +102,8 @@ MESSAGES = {
         "desktop_not_found": "Could not locate the desktop (HRESULT 0x{hresult:08X}).",
         "launcher_not_found": "Launcher file not found: {path}",
         "icon_not_found": "Application icon not found: {path}",
-        "shortcut_timeout": "Windows did not finish creating the shortcut within 30 seconds.",
         "shortcut_failed": "Windows could not create the vmoptions Tuner desktop shortcut.",
+        "shortcut_failed_hresult": "Windows could not create the vmoptions Tuner desktop shortcut ({operation}, HRESULT 0x{hresult:08X}).",
     },
     "ru": {
         "developed_by": "Разработал",
@@ -198,8 +198,8 @@ MESSAGES = {
         "desktop_not_found": "Не удалось найти рабочий стол (HRESULT 0x{hresult:08X}).",
         "launcher_not_found": "Не найден файл запуска: {path}",
         "icon_not_found": "Не найдена иконка приложения: {path}",
-        "shortcut_timeout": "Windows не завершила создание ярлыка за 30 секунд.",
         "shortcut_failed": "Windows не удалось создать ярлык vmoptions Tuner на рабочем столе.",
+        "shortcut_failed_hresult": "Windows не удалось создать ярлык vmoptions Tuner на рабочем столе ({operation}, HRESULT 0x{hresult:08X}).",
     },
 }
 

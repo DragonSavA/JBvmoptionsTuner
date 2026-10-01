@@ -4,7 +4,7 @@
 
 # vmoptions Tuner
 
-**Version: 1.0.0** · [English](#english) · [Русский](#русский)
+**Version: 1.0.1** · [English](#english) · [Русский](#русский)
 
 ## English
 

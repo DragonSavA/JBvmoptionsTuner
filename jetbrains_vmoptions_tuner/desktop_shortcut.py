@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import ctypes
 import os
-import subprocess
+from contextlib import contextmanager
 from ctypes import wintypes
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from uuid import UUID
 
 from .config import ConfigStore
@@ -27,6 +27,73 @@ class GUID(ctypes.Structure):
         ("Data3", wintypes.WORD),
         ("Data4", ctypes.c_ubyte * 8),
     ]
+
+
+def _com_call(interface: ctypes.c_void_p, slot: int, argtypes: tuple, *args: Any) -> int:
+    """Call a COM vtable method with the Windows stdcall ABI."""
+    vtable = ctypes.cast(interface, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))).contents
+    method = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, *argtypes)(vtable[slot])
+    return method(interface, *args)
+
+
+def _check_hresult(result: int, operation: str) -> None:
+    if result < 0:
+        raise LocalizedOSError(
+            "shortcut_failed_hresult", operation=operation, hresult=result & 0xFFFFFFFF
+        )
+
+
+@contextmanager
+def _shell_link() -> Iterator[tuple[ctypes.c_void_p, ctypes.c_void_p]]:
+    """Own IShellLinkW/IPersistFile references without changing the caller's apartment."""
+    ole32 = ctypes.WinDLL("ole32")
+    ole32.CoInitializeEx.argtypes = [ctypes.c_void_p, wintypes.DWORD]
+    ole32.CoInitializeEx.restype = ctypes.c_long
+    ole32.CoUninitialize.argtypes = []
+    ole32.CoUninitialize.restype = None
+    ole32.CoCreateInstance.argtypes = [
+        ctypes.POINTER(GUID),
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.POINTER(GUID),
+        ctypes.POINTER(ctypes.c_void_p),
+    ]
+    ole32.CoCreateInstance.restype = ctypes.c_long
+    initialized = ole32.CoInitializeEx(None, 2)  # COINIT_APARTMENTTHREADED
+    # WinUI/PyWinRT may already have initialized COM with another model.
+    # RPC_E_CHANGED_MODE leaves that apartment intact and needs no uninitialize.
+    if initialized & 0xFFFFFFFF != 0x80010106:
+        _check_hresult(initialized, "CoInitializeEx")
+    link = ctypes.c_void_p()
+    persist = ctypes.c_void_p()
+    try:
+        clsid = GUID.from_buffer_copy(UUID("00021401-0000-0000-C000-000000000046").bytes_le)
+        iid_link = GUID.from_buffer_copy(UUID("000214F9-0000-0000-C000-000000000046").bytes_le)
+        iid_persist = GUID.from_buffer_copy(UUID("0000010B-0000-0000-C000-000000000046").bytes_le)
+        _check_hresult(
+            ole32.CoCreateInstance(
+                ctypes.byref(clsid), None, 1, ctypes.byref(iid_link), ctypes.byref(link)
+            ),  # CLSCTX_INPROC_SERVER
+            "CoCreateInstance(IShellLinkW)",
+        )
+        _check_hresult(
+            _com_call(
+                link,
+                0,  # IUnknown.QueryInterface
+                (ctypes.POINTER(GUID), ctypes.POINTER(ctypes.c_void_p)),
+                ctypes.byref(iid_persist),
+                ctypes.byref(persist),
+            ),
+            "QueryInterface(IPersistFile)",
+        )
+        yield link, persist
+    finally:
+        if persist.value:
+            _com_call(persist, 2, ())  # IUnknown.Release
+        if link.value:
+            _com_call(link, 2, ())
+        if initialized >= 0:  # Balance S_OK and S_FALSE, but not RPC_E_CHANGED_MODE.
+            ole32.CoUninitialize()
 
 
 def powershell_executable() -> Path:
@@ -79,36 +146,30 @@ def enable(entry_script: Path) -> None:
         raise LocalizedOSError("icon_not_found", path=APP_ICON)
     shortcut = get_shortcut_path()
     shortcut.parent.mkdir(parents=True, exist_ok=True)
-    env = os.environ.copy()
-    # Paths are data, never interpolated into PowerShell source code. This
-    # also handles Cyrillic, apostrophes, ampersands and spaces in paths.
-    env.update(
-        {
-            "VMOPT_SHORTCUT_PATH": str(shortcut),
-            "VMOPT_LAUNCHER_PATH": str(launcher),
-            "VMOPT_ICON_PATH": str(APP_ICON),
-        }
-    )
-    try:
-        result = subprocess.run(
-            [
-                str(powershell_executable()),
-                "-NoLogo",
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                str(PACKAGE_DIR / "desktop_shortcut.ps1"),
-            ],
-            env=env,
-            check=False,
-            capture_output=True,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-            timeout=30,
+    # WScript.Shell uses the system ANSI code page for shortcut filenames.
+    # IShellLinkW and IPersistFile use UTF-16 for every path, including Save.
+    with _shell_link() as (link, persist):
+        for slot, operation, value in (
+            (20, "SetPath", str(launcher)),
+            (9, "SetWorkingDirectory", str(launcher.parent)),
+            (7, "SetDescription", "Launch vmoptions Tuner"),
+        ):
+            _check_hresult(
+                _com_call(link, slot, (wintypes.LPCWSTR,), value), f"IShellLinkW.{operation}"
+            )
+        _check_hresult(
+            _com_call(link, 17, (wintypes.LPCWSTR, ctypes.c_int), str(APP_ICON), 0),
+            "IShellLinkW.SetIconLocation",
         )
-    except subprocess.TimeoutExpired as error:
-        raise LocalizedOSError("shortcut_timeout") from error
-    if result.returncode or not shortcut.is_file():
+        _check_hresult(
+            _com_call(link, 15, (ctypes.c_int,), 1),
+            "IShellLinkW.SetShowCmd",  # SW_SHOWNORMAL
+        )
+        _check_hresult(
+            _com_call(persist, 6, (wintypes.LPCWSTR, wintypes.BOOL), str(shortcut), True),
+            "IPersistFile.Save",
+        )
+    if not shortcut.is_file():
         raise LocalizedOSError("shortcut_failed")
 
 

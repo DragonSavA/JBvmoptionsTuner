@@ -39,7 +39,7 @@ try {
     Set-Item -Path Function:Get-PythonCandidates -Value $savedCandidates
 }
 
-foreach ($relative in @('scripts\launch.ps1', 'scripts\build_icon.ps1', 'jetbrains_vmoptions_tuner\desktop_shortcut.ps1', 'jetbrains_vmoptions_tuner\install_runtime.ps1')) {
+foreach ($relative in @('scripts\launch.ps1', 'scripts\build_icon.ps1', 'jetbrains_vmoptions_tuner\install_runtime.ps1')) {
     $tokens = $null
     $errors = $null
     [Management.Automation.Language.Parser]::ParseFile((Join-Path $root $relative), [ref]$tokens, [ref]$errors) | Out-Null
