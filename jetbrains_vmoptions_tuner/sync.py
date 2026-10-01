@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
+from .localization import DEFAULT_LANGUAGE, translate
+
 
 @dataclass(slots=True)
 class TextFile:
@@ -53,7 +55,9 @@ def normalize_option_line(line: str) -> str:
     return line.strip()
 
 
-def validate_option_lines(text_or_lines: str | Iterable[str]) -> tuple[list[str], list[str]]:
+def validate_option_lines(
+    text_or_lines: str | Iterable[str], language: str = DEFAULT_LANGUAGE
+) -> tuple[list[str], list[str]]:
     source = text_or_lines.splitlines() if isinstance(text_or_lines, str) else text_or_lines
     lines: list[str] = []
     errors: list[str] = []
@@ -63,13 +67,13 @@ def validate_option_lines(text_or_lines: str | Iterable[str]) -> tuple[list[str]
         if not line:
             continue
         if not line.startswith("-"):
-            errors.append(f"Строка {number} должна начинаться с ‘-’: {line}")
+            errors.append(translate("line_invalid", language, number=number, line=line))
             continue
         if line not in seen:
             lines.append(line)
             seen.add(line)
     if not lines and not errors:
-        errors.append("Добавьте хотя бы одну строку параметров.")
+        errors.append(translate("options_required", language))
     return lines, errors
 
 
@@ -152,7 +156,8 @@ def synchronize_ide(config: dict[str, Any], ide: dict[str, Any]) -> SyncItemResu
     group = group_for_ide(config, ide_id)
     if not group:
         return result
-    lines, errors = validate_option_lines(group.get("lines", []))
+    language = config.get("settings", {}).get("language", DEFAULT_LANGUAGE)
+    lines, errors = validate_option_lines(group.get("lines", []), language)
     if errors:
         result.error = "; ".join(errors)
         return result
@@ -180,4 +185,3 @@ def save_edited_text(path: str | Path, text: str, original: TextFile | None = No
         path,
         TextFile(normalized, base.encoding, base.newline, base.bom),
     )
-

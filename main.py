@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--background",
         action="store_true",
-        help="синхронизировать файлы без открытия окна",
+        help="synchronize files without opening the window",
     )
     return parser.parse_args()
 
@@ -41,7 +41,7 @@ def main() -> int:
         return run_background()
 
     if sys.platform != "win32":
-        print("UI JetBrains vmoptions Tuner запускается только в Windows 11.", file=sys.stderr)
+        print("The JetBrains vmoptions Tuner UI requires Windows 11.", file=sys.stderr)
         return 2
 
     from jetbrains_vmoptions_tuner.ui import run_ui

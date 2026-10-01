@@ -4,13 +4,14 @@
 
 # vmoptions Tuner
 
-**Version: 1.0.0-RC1** · [English](#english) · [Русский](#русский)
+**Version: 1.0.0-RC2** · [English](#english) · [Русский](#русский)
 
 ## English
 
 A Windows 11 application that edits JetBrains `.vmoptions` files and restores your
 assigned JVM options after IDE updates. Built with Python and WinUI 3 (PyWinRT).
-The interface is currently in Russian.
+The interface supports English and Russian. English is selected on first launch;
+use **ENG | RUS** in **Settings** to switch languages instantly.
 
 Supports current and legacy JetBrains products, Android Studio, MPS, Gateway and
 JetBrains Client. Each product can be bound to a manually selected `.vmoptions` file.
@@ -70,12 +71,12 @@ so it picks up the updated user `PATH`.
 
 ### First use and settings
 
-1. Under **IDE и файлы**, select a product and choose its `.vmoptions` file manually.
+1. Under **IDEs and files**, select a product and choose its `.vmoptions` file manually.
    The application does not search for IDE installations.
-2. Under **Наборы строк**, create an option set, enter one option per
+2. Under **Option sets**, create an option set, enter one option per
    line, and assign it to one or more IDEs. Every nonempty line must start with `-`;
    duplicate lines are removed. Each IDE belongs to at most one set.
-3. Use **Синхронизировать все** or select an IDE in the editor and synchronize its
+3. Use **Synchronize all** or select an IDE in the editor and synchronize its
    file. Missing assigned lines are appended. Existing options are kept.
 
 The editor shows the full file, highlights assigned lines in green and warns about
@@ -86,8 +87,12 @@ Both startup options are enabled by default and work independently:
 
 | Setting | Enabled | Disabled |
 | --- | --- | --- |
-| **Автозапуск** (Autostart) | Runs one silent synchronization when you sign in to Windows. | Removes the app’s current-user Run registration. |
-| **Иконка на рабочем столе** (Desktop icon) | Creates a desktop shortcut to `start.bat`. | Removes that shortcut and remembers your choice across launches. |
+| **Autostart** | Runs one silent synchronization when you sign in to Windows. | Removes the app’s current-user Run registration. |
+| **Desktop icon** | Creates a desktop shortcut to `start.bat`. | Removes that shortcut and remembers your choice across launches. |
+
+**Language — ENG | RUS** changes labels, hints, validation messages and the file
+picker immediately. Your choice is saved between launches. Switching languages
+preserves unsaved IDE associations, option sets and file edits.
 
 The desktop shortcut setting also applies to a redirected / OneDrive desktop.
 Removing the shortcut never prevents launching through `start.bat` or `main.py`.
@@ -96,7 +101,7 @@ select the system, light or dark theme and set an accent colour as `#RRGGBB`.
 
 ### Files, updates and limitations
 
-- Settings, IDE paths, option sets and the desktop shortcut preference are stored
+- Settings, language, IDE paths, option sets and the desktop shortcut preference are stored
   in `%LOCALAPPDATA%\JetBrainsVmoptionsTuner\config.json`, outside the repository.
 - Autostart uses
   `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\JetBrainsVmoptionsTuner`
@@ -106,7 +111,8 @@ select the system, light or dark theme and set an accent colour as `#RRGGBB`.
   If the old shortcut remains on your desktop, launch the moved batch file directly.
 - To update, replace the project files in the same folder and run `start.bat` again.
   Keep your `.venv`; the launcher will check dependencies. Your settings stay in
-  Local AppData. `1.0.0-RC1` also reads configurations from earlier versions.
+  Local AppData. `1.0.0-RC2` also reads configurations from earlier versions;
+  configurations without a language preference use English.
 - The application runs with your current permissions. Pick a `.vmoptions` file you
   can write to; no permissions are elevated to edit IDE files. Synchronization
   preserves UTF-8 BOM, CRLF/LF and the original ANSI encoding.
@@ -150,6 +156,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_icon.ps1
 | `start.bat`, `scripts/launch.ps1` | Python discovery, environment setup and launch |
 | `main.py`, `bootstrap.py` | Direct/background entry point and prerequisite checks |
 | `ui.py`, `main_window.xaml` | WinUI 3 interface |
+| `localization.py` | English and Russian translations and UI bindings |
 | `desktop_shortcut.py`, `autostart.py` | Desktop shortcut and sign-in registration |
 | `sync.py`, `config.py`, `background.py` | File synchronization, settings and silent execution |
 | `catalog.py`, `assets/` | Product catalogue, product icons and the application icon |
@@ -170,7 +177,9 @@ endorsed by or sponsored by JetBrains, Google or other trademark owners.
 
 Приложение для Windows 11, которое редактирует файлы `.vmoptions` продуктов
 JetBrains и восстанавливает назначенные параметры JVM после обновлений IDE.
-Написано на Python и WinUI 3 (PyWinRT). Интерфейс — на русском языке.
+Написано на Python и WinUI 3 (PyWinRT). Интерфейс поддерживает английский и русский
+языки. При первом запуске выбран английский; переключение **ENG | RUS** находится
+в блоке **Settings / Настройки** и применяется сразу.
 
 Поддерживаются актуальные и прежние продукты JetBrains, Android Studio, MPS,
 Gateway и JetBrains Client. Для каждого продукта `.vmoptions` выбирается вручную.
@@ -232,6 +241,10 @@ Windows App Runtime. Подробности:
 
 ### Первое использование и настройки
 
+Чтобы использовать русские названия элементов ниже, выберите **RUS** в блоке
+**Settings**. Язык сохраняется между запусками. Переключение не сбрасывает
+несохранённые связки IDE, наборы строк и правки файлов.
+
 1. В блоке **IDE и файлы** выберите продукт и вручную укажите его `.vmoptions`.
    Автоматического поиска установленных IDE нет.
 2. В блоке **Наборы строк** создайте набор, впишите параметры по одному
@@ -260,7 +273,7 @@ Windows App Runtime. Подробности:
 
 ### Данные, обновления и ограничения
 
-- Настройки, пути к IDE, наборы строк и состояние тумблера ярлыка хранятся вне
+- Настройки, язык, пути к IDE, наборы строк и состояние тумблера ярлыка хранятся вне
   репозитория: `%LOCALAPPDATA%\JetBrainsVmoptionsTuner\config.json`.
 - Автозапуск регистрируется в
   `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\JetBrainsVmoptionsTuner`
@@ -271,7 +284,8 @@ Windows App Runtime. Подробности:
   напрямую.
 - Для обновления замените файлы проекта в той же папке и снова запустите
   `start.bat`. Сохраните `.venv`: файл запуска проверит зависимости. Настройки
-  остаются в Local AppData. Версия `1.0.0-RC1` читает конфигурации прежних версий.
+  остаются в Local AppData. Версия `1.0.0-RC2` читает конфигурации прежних версий;
+  если язык в них ещё не указан, используется английский.
 - Приложение работает с вашими текущими правами. Выбирайте `.vmoptions`, доступный
   вам на запись; приложение не повышает права для редактирования файлов IDE.
   Синхронизация сохраняет UTF-8 BOM, CRLF/LF и исходное ANSI-кодирование.
@@ -317,6 +331,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_icon.ps1
 | `start.bat`, `scripts/launch.ps1` | Поиск Python, подготовка окружения и запуск |
 | `main.py`, `bootstrap.py` | Прямой/фоновый запуск и проверка зависимостей |
 | `ui.py`, `main_window.xaml` | Интерфейс WinUI 3 |
+| `localization.py` | Английские и русские переводы и привязки к интерфейсу |
 | `desktop_shortcut.py`, `autostart.py` | Ярлык и регистрация запуска при входе |
 | `sync.py`, `config.py`, `background.py` | Синхронизация файлов, настройки и тихий режим |
 | `catalog.py`, `assets/` | Каталог продуктов, их иконки и иконка приложения |

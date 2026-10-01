@@ -27,7 +27,7 @@ class ValidationTests(unittest.TestCase):
         lines, errors = validate_option_lines("-Xmx4g\ninvalid\n-Xmx4g\n-Dfoo=true")
         self.assertEqual(lines, ["-Xmx4g", "-Dfoo=true"])
         self.assertEqual(len(errors), 1)
-        self.assertIn("Строка 2", errors[0])
+        self.assertIn("Line 2", errors[0])
 
     def test_empty_group_is_rejected(self) -> None:
         self.assertTrue(validate_option_lines("\n\n")[1])

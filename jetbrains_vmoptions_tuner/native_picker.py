@@ -5,6 +5,7 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 
+from .localization import DEFAULT_LANGUAGE, translate
 
 OFN_FILEMUSTEXIST = 0x00001000
 OFN_PATHMUSTEXIST = 0x00000800
@@ -40,15 +41,16 @@ class OPENFILENAMEW(ctypes.Structure):
     ]
 
 
-def choose_vmoptions_file() -> str | None:
+def choose_vmoptions_file(language: str = DEFAULT_LANGUAGE) -> str | None:
     buffer = ctypes.create_unicode_buffer(32768)
     dialog = OPENFILENAMEW()
     dialog.lStructSize = ctypes.sizeof(OPENFILENAMEW)
-    dialog.lpstrFilter = "VM options (*.vmoptions)\0*.vmoptions\0Все файлы (*.*)\0*.*\0\0"
+    all_files = translate("picker_all_files", language)
+    dialog.lpstrFilter = f"VM options (*.vmoptions)\0*.vmoptions\0{all_files}\0*.*\0\0"
     dialog.nFilterIndex = 1
     dialog.lpstrFile = ctypes.cast(buffer, wintypes.LPWSTR)
     dialog.nMaxFile = len(buffer)
-    dialog.lpstrTitle = "Выберите файл .vmoptions"
+    dialog.lpstrTitle = translate("picker_title", language)
     dialog.lpstrDefExt = "vmoptions"
     dialog.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_EXPLORER | OFN_NOCHANGEDIR
     if ctypes.windll.comdlg32.GetOpenFileNameW(ctypes.byref(dialog)):

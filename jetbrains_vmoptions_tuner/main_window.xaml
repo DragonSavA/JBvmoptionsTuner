@@ -17,32 +17,39 @@
                                 <TextBlock x:Name="VersionText" FontSize="12" Opacity="0.62"/>
                             </StackPanel>
                         </StackPanel>
-                        <TextBlock Text="Ваши настройки JetBrains IDE — на месте после каждого обновления."
+                        <TextBlock x:Name="TaglineText" Text="Your JetBrains IDE settings stay in place after every update."
                                    FontSize="16" Opacity="0.72" TextWrapping="Wrap"/>
-                        <Button x:Name="SyncAllTop" Content="Синхронизировать все"
+                        <Button x:Name="SyncAllTop" Content="Synchronize all"
                                 Padding="18,9" HorizontalAlignment="Left"/>
                     </StackPanel>
                     <Border Grid.Column="1"
                             BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                             BorderThickness="1" CornerRadius="12" Padding="20,16">
                         <StackPanel Spacing="14">
-                            <TextBlock Text="Настройки" FontSize="20" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="SettingsTitle" Text="Settings" FontSize="20" FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock x:Name="LanguageLabel" Text="Language" VerticalAlignment="Center"
+                                           Margin="0,0,8,0"/>
+                                <ToggleButton x:Name="EnglishLanguageButton" Content="ENG" IsChecked="True"/>
+                                <TextBlock Text="|" VerticalAlignment="Center" Opacity="0.6"/>
+                                <ToggleButton x:Name="RussianLanguageButton" Content="RUS"/>
+                            </StackPanel>
                             <Grid ColumnSpacing="20">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="320"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="Оформление" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="AppearanceLabel" Text="Appearance" FontWeight="SemiBold"/>
                                     <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <ComboBox x:Name="ThemePicker" Header="Тема" Width="145">
-                                            <ComboBoxItem Content="Как в системе"/>
-                                            <ComboBoxItem Content="Светлая"/>
-                                            <ComboBoxItem Content="Тёмная"/>
+                                        <ComboBox x:Name="ThemePicker" Header="Theme" Width="145">
+                                            <ComboBoxItem x:Name="SystemThemeItem" Content="System default"/>
+                                            <ComboBoxItem x:Name="LightThemeItem" Content="Light"/>
+                                            <ComboBoxItem x:Name="DarkThemeItem" Content="Dark"/>
                                         </ComboBox>
-                                        <TextBox x:Name="AccentBox" Header="Акцент" Width="120"
+                                        <TextBox x:Name="AccentBox" Header="Accent" Width="120"
                                                  PlaceholderText="#00FF00"/>
-                                        <Button x:Name="ApplyAppearanceButton" Content="Применить"
+                                        <Button x:Name="ApplyAppearanceButton" Content="Apply"
                                                 VerticalAlignment="Bottom"/>
                                     </StackPanel>
                                 </StackPanel>
@@ -50,15 +57,15 @@
                                         BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                                         BorderThickness="1,0,0,0" Padding="20,0,0,0">
                                     <StackPanel Spacing="8">
-                                        <TextBlock Text="Автозапуск" FontWeight="SemiBold"/>
-                                        <ToggleSwitch x:Name="AutostartToggle" OnContent="Включён"
-                                                      OffContent="Выключен"/>
+                                        <TextBlock x:Name="AutostartLabel" Text="Autostart" FontWeight="SemiBold"/>
+                                        <ToggleSwitch x:Name="AutostartToggle" OnContent="Enabled"
+                                                      OffContent="Disabled"/>
                                         <TextBlock x:Name="AutostartHint" Opacity="0.7"
                                                    TextWrapping="Wrap"/>
-                                        <TextBlock Text="Иконка на рабочем столе" FontWeight="SemiBold"
+                                        <TextBlock x:Name="DesktopShortcutLabel" Text="Desktop icon" FontWeight="SemiBold"
                                                    Margin="0,8,0,0"/>
-                                        <ToggleSwitch x:Name="DesktopShortcutToggle" OnContent="Включена"
-                                                      OffContent="Выключена"/>
+                                        <ToggleSwitch x:Name="DesktopShortcutToggle" OnContent="Enabled"
+                                                      OffContent="Disabled"/>
                                         <TextBlock x:Name="DesktopShortcutHint" Opacity="0.7"
                                                    TextWrapping="Wrap"/>
                                     </StackPanel>
@@ -79,11 +86,11 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Spacing="3">
-                                <TextBlock Text="IDE и файлы" FontSize="22" FontWeight="SemiBold"/>
-                                <TextBlock Text="Выберите продукт и укажите его .vmoptions вручную."
+                                <TextBlock x:Name="IdesTitle" Text="IDEs and files" FontSize="22" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="IdesDescription" Text="Select a product and choose its .vmoptions file manually."
                                            Opacity="0.7"/>
                             </StackPanel>
-                            <Button x:Name="NewIdeButton" Grid.Column="1" Content="Новая связка"/>
+                            <Button x:Name="NewIdeButton" Grid.Column="1" Content="New association"/>
                         </Grid>
                         <Grid ColumnSpacing="24">
                             <Grid.ColumnDefinitions>
@@ -99,14 +106,14 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="IdePathBox" Header="Файл .vmoptions"
+                                    <TextBox x:Name="IdePathBox" Header=".vmoptions file"
                                              PlaceholderText="D:\Apps\JetBrains\...\product64.exe.vmoptions"/>
-                                    <Button x:Name="ChooseFileButton" Grid.Column="1" Content="Выбрать файл…"
+                                    <Button x:Name="ChooseFileButton" Grid.Column="1" Content="Choose file…"
                                             VerticalAlignment="Bottom"/>
                                 </Grid>
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <Button x:Name="SaveIdeButton" Content="Сохранить связку"/>
-                                    <Button x:Name="DeleteIdeButton" Content="Удалить"/>
+                                    <Button x:Name="SaveIdeButton" Content="Save association"/>
+                                    <Button x:Name="DeleteIdeButton" Content="Delete"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -122,11 +129,11 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Spacing="3">
-                                <TextBlock Text="Наборы строк" FontSize="22" FontWeight="SemiBold"/>
-                                <TextBlock Text="Один набор можно назначить нескольким IDE; у каждой IDE может быть только один набор."
+                                <TextBlock x:Name="GroupsTitle" Text="Option sets" FontSize="22" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="GroupsDescription" Text="One set can be assigned to multiple IDEs; each IDE can have only one set."
                                            Opacity="0.7" TextWrapping="Wrap"/>
                             </StackPanel>
-                            <Button x:Name="NewGroupButton" Grid.Column="1" Content="Новый набор"/>
+                            <Button x:Name="NewGroupButton" Grid.Column="1" Content="New set"/>
                         </Grid>
                         <Grid ColumnSpacing="24">
                             <Grid.ColumnDefinitions>
@@ -135,15 +142,15 @@
                             </Grid.ColumnDefinitions>
                             <ListView x:Name="GroupList" Height="360" SelectionMode="Single"/>
                             <StackPanel Grid.Column="1" Spacing="12">
-                                <TextBox x:Name="GroupNameBox" Header="Название набора"
-                                         PlaceholderText="Например: Общие параметры JVM"/>
-                                <TextBlock Text="Назначить IDE" FontWeight="SemiBold"/>
+                                <TextBox x:Name="GroupNameBox" Header="Set name"
+                                         PlaceholderText="Example: Common JVM options"/>
+                                <TextBlock x:Name="AssignIdesLabel" Text="Assign to IDEs" FontWeight="SemiBold"/>
                                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                               VerticalScrollBarVisibility="Disabled"
                                               Padding="2,2,2,4">
                                     <StackPanel x:Name="GroupIdeButtons" Orientation="Horizontal" Spacing="8"/>
                                 </ScrollViewer>
-                                <TextBox x:Name="GroupLinesBox" Header="Строки — по одной на строке"
+                                <TextBox x:Name="GroupLinesBox" Header="Options — one per line"
                                          AcceptsReturn="True" TextWrapping="NoWrap" Height="160"
                                          FontFamily="Consolas"
                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -152,9 +159,9 @@
                                            TextWrapping="Wrap" Visibility="Collapsed"/>
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <Button x:Name="AddCompatibilityButton"
-                                            Content="Добавить игнорирование совместимости плагинов"/>
-                                    <Button x:Name="SaveGroupButton" Content="Сохранить набор"/>
-                                    <Button x:Name="DeleteGroupButton" Content="Удалить"/>
+                                            Content="Add plugin compatibility override"/>
+                                    <Button x:Name="SaveGroupButton" Content="Save set"/>
+                                    <Button x:Name="DeleteGroupButton" Content="Delete"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -165,9 +172,9 @@
                         BorderThickness="1" CornerRadius="12" Padding="22">
                     <StackPanel Spacing="16">
                         <StackPanel Spacing="3">
-                            <TextBlock Text="Просмотр и редактирование .vmoptions" FontSize="22"
+                            <TextBlock x:Name="EditorTitle" Text="View and edit .vmoptions" FontSize="22"
                                        FontWeight="SemiBold"/>
-                            <TextBlock Text="Строки назначенного набора подсвечиваются зелёным."
+                            <TextBlock x:Name="EditorDescription" Text="Lines from the assigned set are highlighted in green."
                                        Opacity="0.7"/>
                         </StackPanel>
                         <ScrollViewer HorizontalScrollBarVisibility="Auto"
@@ -187,7 +194,7 @@
                                 <TextBlock x:Name="MissingText" VerticalAlignment="Center"
                                            TextWrapping="Wrap"/>
                                 <Button x:Name="SyncSelectedButton" Grid.Column="1"
-                                        Content="Синхронизировать сейчас"/>
+                                        Content="Synchronize now"/>
                             </Grid>
                         </Border>
                         <Border x:Name="SavePanel" Background="#264F7CFF" CornerRadius="8"
@@ -197,11 +204,11 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Содержимое изменено. Сохранить файл?"
+                                <TextBlock x:Name="UnsavedPrompt" Text="The contents have changed. Save the file?"
                                            VerticalAlignment="Center"/>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <Button x:Name="DiscardFileButton" Content="Отменить изменения"/>
-                                    <Button x:Name="SaveFileButton" Content="Сохранить файл"/>
+                                    <Button x:Name="DiscardFileButton" Content="Discard changes"/>
+                                    <Button x:Name="SaveFileButton" Content="Save file"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -221,12 +228,12 @@
                         <TextBlock x:Name="LastManualText" Opacity="0.72"/>
                         <TextBlock x:Name="LastAutoText" Opacity="0.72"/>
                     </StackPanel>
-                    <Button x:Name="SyncAllBottom" Grid.Column="1" Content="Синхронизировать все"
+                    <Button x:Name="SyncAllBottom" Grid.Column="1" Content="Synchronize all"
                             Padding="18,9" VerticalAlignment="Center"/>
                 </Grid>
                 <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                         BorderThickness="0,1,0,0" Padding="0,18,0,0">
-                    <TextBlock Text="Все права на товарные знаки и логотипы принадлежат их владельцам. Автор проекта не связан с правообладателями и не является их представителем."
+                    <TextBlock x:Name="TrademarkNotice" Text="All trademarks and logos belong to their respective owners. The project author is not affiliated with or a representative of these owners."
                                Opacity="0.62" FontSize="12" TextAlignment="Center"
                                TextWrapping="Wrap"/>
                 </Border>

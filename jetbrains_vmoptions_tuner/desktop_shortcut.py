@@ -11,6 +11,7 @@ from typing import Any
 from uuid import UUID
 
 from .config import ConfigStore
+from .localization import LocalizedOSError
 
 
 SHORTCUT_NAME = "vmoptions Tuner.lnk"
@@ -36,7 +37,7 @@ def powershell_executable() -> Path:
 
 def get_desktop_path() -> Path:
     if os.name != "nt":
-        raise OSError("Ярлык на рабочем столе поддерживается только в Windows.")
+        raise LocalizedOSError("desktop_windows_only")
     # FOLDERID_Desktop resolves the actual current-user desktop, even when it
     # has been redirected. USERPROFILE/Desktop is not reliable for OneDrive.
     folder_id = GUID.from_buffer_copy(UUID("B4BFCC3A-DB2C-424C-B029-7FE99A87C641").bytes_le)
@@ -55,7 +56,7 @@ def get_desktop_path() -> Path:
     result = shell32.SHGetKnownFolderPath(ctypes.byref(folder_id), 0, None, ctypes.byref(buffer))
     try:
         if result < 0:
-            raise OSError(f"Не удалось найти рабочий стол (HRESULT 0x{result & 0xFFFFFFFF:08X}).")
+            raise LocalizedOSError("desktop_not_found", hresult=result & 0xFFFFFFFF)
         return Path(ctypes.wstring_at(buffer))
     finally:
         if buffer.value:
@@ -73,9 +74,9 @@ def is_enabled() -> bool:
 def enable(entry_script: Path) -> None:
     launcher = entry_script.resolve().with_name("start.bat")
     if not launcher.is_file():
-        raise OSError(f"Не найден файл запуска: {launcher}")
+        raise LocalizedOSError("launcher_not_found", path=launcher)
     if not APP_ICON.is_file():
-        raise OSError(f"Не найдена иконка приложения: {APP_ICON}")
+        raise LocalizedOSError("icon_not_found", path=APP_ICON)
     shortcut = get_shortcut_path()
     shortcut.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
@@ -106,9 +107,9 @@ def enable(entry_script: Path) -> None:
             timeout=30,
         )
     except subprocess.TimeoutExpired as error:
-        raise OSError("Windows не завершила создание ярлыка за 30 секунд.") from error
+        raise LocalizedOSError("shortcut_timeout") from error
     if result.returncode or not shortcut.is_file():
-        raise OSError("Windows не удалось создать ярлык vmoptions Tuner на рабочем столе.")
+        raise LocalizedOSError("shortcut_failed")
 
 
 def disable() -> None:

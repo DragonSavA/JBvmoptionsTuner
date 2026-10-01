@@ -5,10 +5,10 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Tuple, Union, cast, override
+from typing import Any, Callable, Tuple, Union, cast, override
 from uuid import uuid4
 
-from winrt.system import Array
+from winrt.system import Array, box_string
 from winrt.windows.foundation import Uri
 from winrt.windows.ui.text import TextGetOptions, TextSetOptions
 from winrt.windows.ui.xaml.interop import TypeKind, TypeName
@@ -27,6 +27,7 @@ from winui3.microsoft.ui.xaml.controls import (
     Border,
     Button,
     ComboBox,
+    ComboBoxItem,
     Image,
     InfoBar,
     InfoBarSeverity,
@@ -59,6 +60,7 @@ from winui3.microsoft.windows.applicationmodel.dynamicdependency.bootstrap impor
 from . import __version__, autostart, desktop_shortcut
 from .catalog import PRODUCTS, PRODUCT_BY_KEY, Product
 from .config import ConfigStore
+from .localization import XAML_STRINGS, LocalizedOSError, normalize_language, translate
 from .native_picker import choose_vmoptions_file
 from .sync import (
     TextFile,
@@ -77,6 +79,14 @@ IGNORE_COMPATIBILITY = "-Didea.ignore.plugin.compatibility=true"
 ACCENT_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 GREEN = "#22C55E"
 ASSET_DIR = Path(__file__).with_name("assets")
+LOCALIZABLE_CONTROLS = {
+    "TextBlock": TextBlock,
+    "TextBox": TextBox,
+    "Button": Button,
+    "ComboBox": ComboBox,
+    "ComboBoxItem": ComboBoxItem,
+    "ToggleSwitch": ToggleSwitch,
+}
 
 
 def color_tuple(value: str) -> tuple[int, int, int, int]:
@@ -96,14 +106,14 @@ def foreground_for(value: str) -> str:
     return "#111111" if luminance > 150 else "#FFFFFF"
 
 
-def display_timestamp(value: object) -> str:
+def display_timestamp(value: object, language: str = "en") -> str:
     if not isinstance(value, str) or not value:
-        return "ещё не выполнялась"
+        return translate("never_synced", language)
     try:
         parsed = datetime.fromisoformat(value).astimezone()
     except ValueError:
         return value
-    return parsed.strftime("%d.%m.%Y, %H:%M:%S")
+    return parsed.strftime("%d.%m.%Y, %H:%M:%S" if language == "ru" else "%Y-%m-%d, %H:%M:%S")
 
 
 class MainController:
@@ -112,6 +122,7 @@ class MainController:
         self.store = store
         self.entry_script = entry_script
         self.config = self.store.load()
+        self.language = normalize_language(self.config["settings"].get("language"))
         self._handlers: list[Callable[..., None]] = []
         self._setting_autostart = False
         self._setting_desktop_shortcut = False
@@ -124,11 +135,14 @@ class MainController:
         self._editor_dirty = False
         self._ide_index_ids: list[str] = []
         self._group_index_ids: list[str] = []
+        self._group_titles: dict[str, TextBlock] = {}
         self._group_ide_buttons: dict[str, ToggleButton] = {}
         self._viewer_buttons: dict[str, Button] = {}
 
         root = cast(FrameworkElement, window.content.as_(FrameworkElement))
         self.root = root
+        self.english_language_button = self._find(root, "EnglishLanguageButton", ToggleButton)
+        self.russian_language_button = self._find(root, "RussianLanguageButton", ToggleButton)
         self.theme_picker = self._find(root, "ThemePicker", ComboBox)
         self.accent_box = self._find(root, "AccentBox", TextBox)
         self.apply_appearance_button = self._find(root, "ApplyAppearanceButton", Button)
@@ -178,21 +192,79 @@ class MainController:
     def _find(root: FrameworkElement, name: str, expected_type):
         item = root.find_name(name)
         if item is None:
-            raise RuntimeError(f"В XAML отсутствует элемент {name}")
+            raise RuntimeError(f"Missing XAML element: {name}")
         return item.as_(expected_type)
 
-    def _bind(self, add_handler: Callable[[Callable[..., None]], object], handler: Callable) -> None:
+    def tr(self, key: str, **values: Any) -> str:
+        return translate(key, self.language, **values)
+
+    def _error_text(self, error: Exception) -> str:
+        return error.message(self.language) if isinstance(error, LocalizedOSError) else str(error)
+
+    def _apply_language(self) -> None:
+        self.root.language = "ru-RU" if self.language == "ru" else "en-US"
+        for control_type, name, property_name, key in XAML_STRINGS:
+            control = self._find(self.root, name, LOCALIZABLE_CONTROLS[control_type])
+            value = self.tr(key)
+            if property_name in {"content", "header", "on_content", "off_content"}:
+                # These WinUI properties accept IInspectable rather than String.
+                setattr(control, property_name, box_string(value))
+            else:
+                setattr(control, property_name, value)
+        self.english_language_button.is_checked = self.language == "en"
+        self.russian_language_button.is_checked = self.language == "ru"
+
+    def set_language(self, language: str) -> None:
+        language = normalize_language(language)
+        if language == self.language:
+            self._apply_language()
+            return
+        previous = self.language
+        self.config["settings"]["language"] = language
+        try:
+            self.store.save(self.config)
+        except OSError:
+            self.config["settings"]["language"] = previous
+            self._apply_language()
+            raise
+        self.language = language
+        self._apply_language()
+        self._refresh_autostart()
+        self._refresh_desktop_shortcut()
+        self.refresh_timestamps()
+        self._update_group_validation()
+        if self._current_file is not None:
+            self._update_missing_panel(self._editor_text())
+        # Update only captions: rebuilding lists would reload unsaved forms.
+        for group in self.config["groups"]:
+            title = self._group_titles.get(str(group.get("id")))
+            if title is not None:
+                title.text = str(group.get("name", self.tr("untitled")))
+        self.show_status(self.tr("language_changed"), InfoBarSeverity.SUCCESS)
+
+    def on_english_language(self, _sender, _args) -> None:
+        self.set_language("en")
+
+    def on_russian_language(self, _sender, _args) -> None:
+        self.set_language("ru")
+
+    def _bind(
+        self, add_handler: Callable[[Callable[..., None]], object], handler: Callable
+    ) -> None:
         def safe(sender, args) -> None:
             try:
                 handler(sender, args)
             except Exception as error:  # callbacks must never leak into WinRT
-                self.show_status(str(error), InfoBarSeverity.ERROR, "Ошибка")
+                self.show_status(self._error_text(error), InfoBarSeverity.ERROR, self.tr("error"))
 
         self._handlers.append(safe)
         add_handler(safe)
 
     def initialize(self) -> None:
+        self._apply_language()
         self._populate_product_picker()
+        self._bind(self.english_language_button.add_click, self.on_english_language)
+        self._bind(self.russian_language_button.add_click, self.on_russian_language)
         self._bind(self.apply_appearance_button.add_click, self.on_apply_appearance)
         self._bind(self.autostart_toggle.add_toggled, self.on_autostart_toggled)
         self._bind(self.desktop_shortcut_toggle.add_toggled, self.on_desktop_shortcut_toggled)
@@ -219,14 +291,16 @@ class MainController:
         try:
             desktop_shortcut.reconcile(self.config, self.entry_script)
         except OSError as error:
-            desktop_message = f"Не удалось обновить иконку на рабочем столе: {error}"
+            desktop_message = self.tr("desktop_update_failed", error=self._error_text(error))
         self._load_appearance()
         self._refresh_autostart()
         self._refresh_desktop_shortcut()
         self.refresh_all()
         messages = [message for message in (first_run_message, desktop_message) if message]
         if messages:
-            self.show_status("\n".join(messages), InfoBarSeverity.WARNING, "Настройки запуска")
+            self.show_status(
+                "\n".join(messages), InfoBarSeverity.WARNING, self.tr("startup_settings")
+            )
 
     def _ensure_first_run_autostart(self) -> str | None:
         settings = self.config["settings"]
@@ -235,7 +309,7 @@ class MainController:
         try:
             autostart.enable(self.entry_script)
         except OSError as error:
-            return f"Не удалось включить автозапуск: {error}"
+            return self.tr("autostart_enable_failed", error=self._error_text(error))
         settings["first_run_completed"] = True
         self.store.save(self.config)
         return None
@@ -275,7 +349,9 @@ class MainController:
         tile.child = label
         return tile
 
-    def _product_row(self, product: Product, size: float = 36, include_name: bool = True) -> StackPanel:
+    def _product_row(
+        self, product: Product, size: float = 36, include_name: bool = True
+    ) -> StackPanel:
         row = StackPanel()
         row.orientation = Orientation.HORIZONTAL
         row.spacing = 10
@@ -297,7 +373,7 @@ class MainController:
     def apply_appearance(self, save: bool = True) -> None:
         accent = self.accent_box.text.strip()
         if not ACCENT_PATTERN.fullmatch(accent):
-            raise ValueError("Акцентный цвет должен быть в формате #00FF00.")
+            raise ValueError(self.tr("invalid_accent"))
         theme_index = self.theme_picker.selected_index
         theme = {0: "system", 1: "light", 2: "dark"}.get(theme_index, "system")
         self.root.requested_theme = {
@@ -325,17 +401,15 @@ class MainController:
 
     def on_apply_appearance(self, _sender, _args) -> None:
         self.apply_appearance()
-        self.show_status("Оформление применено.", InfoBarSeverity.SUCCESS)
+        self.show_status(self.tr("appearance_applied"), InfoBarSeverity.SUCCESS)
 
     def _refresh_autostart(self) -> None:
         self._setting_autostart = True
         try:
             enabled = autostart.is_enabled()
             self.autostart_toggle.is_on = enabled
-            self.autostart_hint.text = (
-                "При входе в Windows файлы проверяются без открытия окна."
-                if enabled
-                else "Автоматическое восстановление при входе в Windows отключено."
+            self.autostart_hint.text = self.tr(
+                "autostart_on_hint" if enabled else "autostart_off_hint"
             )
         finally:
             self._setting_autostart = False
@@ -353,7 +427,7 @@ class MainController:
             raise
         self._refresh_autostart()
         self.show_status(
-            "Автозапуск включён." if self.autostart_toggle.is_on else "Автозапуск выключен.",
+            self.tr("autostart_on" if self.autostart_toggle.is_on else "autostart_off"),
             InfoBarSeverity.SUCCESS,
         )
 
@@ -365,10 +439,8 @@ class MainController:
             except OSError:
                 enabled = False
             self.desktop_shortcut_toggle.is_on = enabled
-            self.desktop_shortcut_hint.text = (
-                "Ярлык запускает приложение через start.bat."
-                if enabled
-                else "Приложение можно запустить через start.bat или main.py."
+            self.desktop_shortcut_hint.text = self.tr(
+                "desktop_on_hint" if enabled else "desktop_off_hint"
             )
         finally:
             self._setting_desktop_shortcut = False
@@ -383,9 +455,7 @@ class MainController:
         finally:
             self._refresh_desktop_shortcut()
         self.show_status(
-            "Иконка на рабочем столе создана."
-            if self.desktop_shortcut_toggle.is_on
-            else "Иконка на рабочем столе удалена.",
+            self.tr("desktop_on" if self.desktop_shortcut_toggle.is_on else "desktop_off"),
             InfoBarSeverity.SUCCESS,
         )
 
@@ -409,13 +479,13 @@ class MainController:
         self.refresh_timestamps()
 
     def refresh_timestamps(self) -> None:
-        self.last_manual_text.text = (
-            "Последняя ручная синхронизация: "
-            + display_timestamp(self.config.get("last_manual_sync"))
+        self.last_manual_text.text = self.tr(
+            "last_manual",
+            timestamp=display_timestamp(self.config.get("last_manual_sync"), self.language),
         )
-        self.last_auto_text.text = (
-            "Последнее автоматическое восстановление: "
-            + display_timestamp(self.config.get("last_auto_sync"))
+        self.last_auto_text.text = self.tr(
+            "last_auto",
+            timestamp=display_timestamp(self.config.get("last_auto_sync"), self.language),
         )
 
     def _ide_by_id(self, ide_id: str | None) -> dict | None:
@@ -479,20 +549,20 @@ class MainController:
         self.delete_ide_button.is_enabled = True
 
     def on_choose_file(self, _sender, _args) -> None:
-        selected = choose_vmoptions_file()
+        selected = choose_vmoptions_file(self.language)
         if selected:
             self.ide_path_box.text = selected
 
     def on_save_ide(self, _sender, _args) -> None:
         index = self.product_picker.selected_index
         if index < 0 or index >= len(PRODUCTS):
-            raise ValueError("Выберите IDE.")
+            raise ValueError(self.tr("select_ide"))
         product = PRODUCTS[index]
         path = Path(self.ide_path_box.text.strip())
         if path.suffix.lower() != ".vmoptions":
-            raise ValueError("Выберите файл с расширением .vmoptions.")
+            raise ValueError(self.tr("select_vmoptions"))
         if not path.is_file():
-            raise ValueError("Указанный файл не существует.")
+            raise ValueError(self.tr("file_not_found"))
         duplicate = next(
             (
                 ide
@@ -502,7 +572,7 @@ class MainController:
             None,
         )
         if duplicate:
-            raise ValueError(f"Для {product.name} связка уже создана.")
+            raise ValueError(self.tr("duplicate_ide", product=product.name))
         ide = self._ide_by_id(self._selected_ide_id)
         if ide is None:
             ide = {"id": str(uuid4())}
@@ -511,13 +581,13 @@ class MainController:
         ide.update({"product": product.key, "path": str(path.resolve())})
         self._save_config()
         self.refresh_all()
-        self.show_status("Связка IDE сохранена.", InfoBarSeverity.SUCCESS)
+        self.show_status(self.tr("ide_saved"), InfoBarSeverity.SUCCESS)
 
     def on_delete_ide(self, _sender, _args) -> None:
         if not self._selected_ide_id:
             return
         if self._editor_dirty and self._viewer_ide_id == self._selected_ide_id:
-            raise ValueError("Сначала сохраните или отмените изменения в открытом файле.")
+            raise ValueError(self.tr("save_open_file_first"))
         removed = self._selected_ide_id
         self.config["ides"] = [ide for ide in self.config["ides"] if ide.get("id") != removed]
         for group in self.config["groups"]:
@@ -529,18 +599,20 @@ class MainController:
         self._save_config()
         self.refresh_all()
         self.on_new_ide(None, None)
-        self.show_status("Связка IDE удалена.", InfoBarSeverity.SUCCESS)
+        self.show_status(self.tr("ide_deleted"), InfoBarSeverity.SUCCESS)
 
     def refresh_group_list(self) -> None:
         self.group_list.items.clear()
         self._group_index_ids.clear()
+        self._group_titles.clear()
         selected_index = -1
         for index, group in enumerate(self.config["groups"]):
             group_id = str(group.get("id"))
             panel = StackPanel()
             panel.spacing = 7
             title = TextBlock()
-            title.text = str(group.get("name", "Без названия"))
+            title.text = str(group.get("name", self.tr("untitled")))
+            self._group_titles[group_id] = title
             panel.children.append(title)
             icons = StackPanel()
             icons.orientation = Orientation.HORIZONTAL
@@ -606,10 +678,12 @@ class MainController:
         self._update_group_validation()
 
     def _update_group_validation(self) -> None:
-        raw_lines = [line.strip() for line in self.group_lines_box.text.splitlines() if line.strip()]
+        raw_lines = [
+            line.strip() for line in self.group_lines_box.text.splitlines() if line.strip()
+        ]
         invalid = [line for line in raw_lines if not line.startswith("-")]
         if invalid:
-            self.group_validation.text = "Каждая строка должна начинаться с ‘-’."
+            self.group_validation.text = self.tr("line_needs_dash")
             self.group_validation.visibility = Visibility.VISIBLE
         else:
             self.group_validation.text = ""
@@ -627,8 +701,8 @@ class MainController:
     def on_save_group(self, _sender, _args) -> None:
         name = self.group_name_box.text.strip()
         if not name:
-            raise ValueError("Введите название набора.")
-        lines, errors = validate_option_lines(self.group_lines_box.text)
+            raise ValueError(self.tr("name_required"))
+        lines, errors = validate_option_lines(self.group_lines_box.text, self.language)
         if errors:
             self.group_validation.text = "\n".join(errors)
             self.group_validation.visibility = Visibility.VISIBLE
@@ -653,7 +727,7 @@ class MainController:
         self.refresh_viewer_buttons()
         if self._viewer_ide_id:
             self.select_viewer_ide(self._viewer_ide_id)
-        self.show_status("Набор сохранён.", InfoBarSeverity.SUCCESS)
+        self.show_status(self.tr("group_saved"), InfoBarSeverity.SUCCESS)
 
     def on_delete_group(self, _sender, _args) -> None:
         if not self._selected_group_id:
@@ -668,7 +742,7 @@ class MainController:
         self.on_new_group(None, None)
         if self._viewer_ide_id:
             self.select_viewer_ide(self._viewer_ide_id)
-        self.show_status("Набор удалён.", InfoBarSeverity.SUCCESS)
+        self.show_status(self.tr("group_deleted"), InfoBarSeverity.SUCCESS)
 
     def refresh_viewer_buttons(self) -> None:
         self.viewer_ide_panel.children.clear()
@@ -699,7 +773,9 @@ class MainController:
         accent_brush = brush(accent if ACCENT_PATTERN.fullmatch(accent) else "#4F7CFF")
         for ide_id, button in self._viewer_buttons.items():
             button.border_brush = accent_brush
-            button.border_thickness = (2, 2, 2, 2) if ide_id == self._viewer_ide_id else (0, 0, 0, 0)
+            button.border_thickness = (
+                (2, 2, 2, 2) if ide_id == self._viewer_ide_id else (0, 0, 0, 0)
+            )
 
     @staticmethod
     def _logical_text(text: str) -> str:
@@ -724,7 +800,7 @@ class MainController:
     def select_viewer_ide(self, ide_id: str) -> None:
         if self._editor_dirty and ide_id != self._viewer_ide_id:
             self.show_status(
-                "Сначала сохраните или отмените изменения в открытом файле.",
+                self.tr("save_open_file_first"),
                 InfoBarSeverity.WARNING,
             )
             return
@@ -740,7 +816,9 @@ class MainController:
             self._set_editor_text("")
             self.options_editor.is_read_only = True
             self.missing_panel.visibility = Visibility.COLLAPSED
-            self.show_status(f"Не удалось открыть файл: {error}", InfoBarSeverity.ERROR)
+            self.show_status(
+                self.tr("open_file_failed", error=self._error_text(error)), InfoBarSeverity.ERROR
+            )
             self._style_viewer_buttons()
             return
         self.options_editor.is_read_only = False
@@ -771,10 +849,7 @@ class MainController:
     def _update_missing_panel(self, text: str) -> None:
         missing = missing_lines(text, self._required_lines())
         if missing:
-            suffix = "строка" if len(missing) == 1 else "строки"
-            self.missing_text.text = (
-                f"В файле отсутствует {len(missing)} {suffix} из назначенного набора."
-            )
+            self.missing_text.text = self.tr("missing_lines", count=len(missing))
             self.missing_panel.visibility = Visibility.VISIBLE
         else:
             self.missing_panel.visibility = Visibility.COLLAPSED
@@ -784,7 +859,9 @@ class MainController:
             return
         current = self._editor_text()
         self._editor_dirty = current != self._loaded_editor_text
-        self.save_panel.visibility = Visibility.VISIBLE if self._editor_dirty else Visibility.COLLAPSED
+        self.save_panel.visibility = (
+            Visibility.VISIBLE if self._editor_dirty else Visibility.COLLAPSED
+        )
         self._update_missing_panel(current)
 
     def on_save_file(self, _sender, _args) -> None:
@@ -797,7 +874,7 @@ class MainController:
         text = logical + (self._current_file.newline if logical else "")
         save_edited_text(str(ide.get("path", "")), text, self._current_file)
         self.select_viewer_ide(self._viewer_ide_id)
-        self.show_status("Файл .vmoptions сохранён.", InfoBarSeverity.SUCCESS)
+        self.show_status(self.tr("file_saved"), InfoBarSeverity.SUCCESS)
 
     def on_discard_file(self, _sender, _args) -> None:
         if self._viewer_ide_id:
@@ -806,7 +883,7 @@ class MainController:
 
     def on_sync_selected(self, _sender, _args) -> None:
         if self._editor_dirty:
-            raise ValueError("Сначала сохраните или отмените ручные изменения.")
+            raise ValueError(self.tr("save_manual_first"))
         ide = self._ide_by_id(self._viewer_ide_id)
         if not ide:
             return
@@ -817,15 +894,15 @@ class MainController:
             raise OSError(result.error)
         self.select_viewer_ide(str(ide.get("id")))
         message = (
-            f"Добавлено строк: {len(result.added_lines)}."
+            self.tr("lines_added", count=len(result.added_lines))
             if result.changed
-            else "Файл уже синхронизирован."
+            else self.tr("file_synced")
         )
         self.show_status(message, InfoBarSeverity.SUCCESS)
 
     def on_sync_all(self, _sender, _args) -> None:
         if self._editor_dirty:
-            raise ValueError("Сначала сохраните или отмените ручные изменения.")
+            raise ValueError(self.tr("save_manual_first"))
         report = synchronize_all(self.config)
         self.config["last_manual_sync"] = now_iso()
         self._save_config()
@@ -834,16 +911,16 @@ class MainController:
         if report.errors:
             details = "; ".join(f"{item.path}: {item.error}" for item in report.errors)
             self.show_status(
-                f"Синхронизация завершена с ошибками. {details}",
+                self.tr("sync_errors", details=details),
                 InfoBarSeverity.ERROR,
-                "Не все файлы обработаны",
+                self.tr("sync_incomplete"),
             )
         elif report.changed:
             self.show_status(
-                f"Синхронизировано файлов: {report.changed_count}.", InfoBarSeverity.SUCCESS
+                self.tr("files_synced", count=report.changed_count), InfoBarSeverity.SUCCESS
             )
         else:
-            self.show_status("Все файлы уже синхронизированы.", InfoBarSeverity.SUCCESS)
+            self.show_status(self.tr("all_synced"), InfoBarSeverity.SUCCESS)
 
 
 class App(Application, IXamlMetadataProvider):

@@ -19,14 +19,25 @@ Windows shortcut creation; the PowerShell tests cover interpreter discovery.
 4. Test a project path containing spaces, Cyrillic and `&`. Test a broken or old
    `.venv`: it should be preserved as `.venv.backup-…` and replaced.
 5. Verify that the window is resizable, opens maximized, and displays the VMopT
-   icon in its header, title bar and taskbar, plus version `1.0.0-RC1`.
+   icon in its header, title bar and taskbar, plus version `1.0.0-RC2`.
+
+### Interface language
+
+1. With a fresh configuration, verify that the interface opens in English and
+   **ENG** is selected in **Settings → Language — ENG | RUS**.
+2. Select **RUS**, then **ENG**. All labels, theme choices, hints, timestamps,
+   validation messages and the file picker should use the selected language.
+3. Leave edits unsaved in the IDE form, option set form and file editor; switch
+   languages and verify that the contents, assignments and selections remain intact.
+4. Select **RUS**, reopen the app and verify persistence. A legacy configuration
+   without `settings.language` should open in English and retain its other settings.
 
 ### Desktop and sign-in settings
 
 1. On first use, both switches should be on. Inspect the desktop shortcut: its
    target is the project’s `start.bat`, its working directory is the project folder,
    and its icon is `assets/vmopt.ico`. Test a redirected / OneDrive desktop too.
-2. Switch **Иконка на рабочем столе** off. The link should disappear. Reopen using
+2. Switch **Desktop icon** off. The link should disappear. Reopen using
    both `start.bat` and `python path\to\main.py`; the link must stay absent.
 3. Turn the switch on and verify the recreated link launches the app. Delete the
    link manually while the setting is enabled and relaunch: it should be repaired.
@@ -63,8 +74,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_launcher.ps1 -Pyt
 .\start.bat -PrepareOnly
 ```
 
-The opt-in UI smoke test briefly opens and closes a real WinUI window, checks SVG
-loading and both desktop-toggle transitions, and uses temporary configuration and
+The opt-in UI smoke test briefly opens and closes real WinUI windows, checks SVG
+loading, ENG/RUS translations, language persistence, preservation of unsaved edits
+and both desktop-toggle transitions, and uses temporary configuration and
 shortcut files. It leaves the user’s autostart registration untouched.
 `-PrepareOnly` performs the normal prerequisite checks and applies the saved
 shortcut preference without opening the UI.
@@ -88,7 +100,19 @@ PowerShell-тесты проверяют поиск интерпретатора
 4. Проверьте путь с пробелами, кириллицей и `&`. Повреждённая или старая `.venv`
    должна сохраняться в `.venv.backup-…` перед созданием новой.
 5. Окно должно менять размер, открываться развёрнутым и показывать VMopT в шапке,
-   заголовке и панели задач, а также версию `1.0.0-RC1`.
+   заголовке и панели задач, а также версию `1.0.0-RC2`.
+
+### Язык интерфейса
+
+1. С новой конфигурацией интерфейс должен открыться на английском, с выбранным
+   **ENG** в **Settings → Language — ENG | RUS**.
+2. Выберите **RUS**, затем **ENG**. Подписи, темы, подсказки, даты, сообщения
+   валидации и диалог выбора файла должны использовать выбранный язык.
+3. Оставьте несохранённые правки в форме IDE, форме набора и редакторе файла;
+   переключите язык и проверьте сохранность текста, назначений и выбранных элементов.
+4. Выберите **RUS** и перезапустите приложение: выбор должен сохраниться. Старая
+   конфигурация без `settings.language` открывается на английском, сохраняя остальные
+   настройки. Для остальных проверок ниже выберите **RUS**.
 
 ### Ярлык и автозапуск
 
@@ -134,7 +158,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_launcher.ps1 -Pyt
 ```
 
 Отдельный тест интерфейса ненадолго открывает и закрывает настоящее окно WinUI,
-проверяет загрузку SVG и оба переключения тумблера ярлыка. Конфигурация и ярлыки
+проверяет загрузку SVG, переводы ENG/RUS, сохранение языка, сохранность несохранённых
+правок и оба переключения тумблера ярлыка. Конфигурация и ярлыки
 создаются во временной папке; пользовательская регистрация автозапуска не меняется.
 `-PrepareOnly` выполняет обычные проверки зависимостей и применяет сохранённое
 состояние ярлыка, не открывая интерфейс.

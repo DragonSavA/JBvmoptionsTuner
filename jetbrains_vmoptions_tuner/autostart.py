@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .localization import LocalizedOSError
 
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 VALUE_NAME = "JetBrainsVmoptionsTuner"
@@ -52,7 +53,7 @@ def is_enabled() -> bool:
 def enable(entry_script: Path | None = None) -> None:
     winreg = _winreg()
     if winreg is None:
-        raise OSError("Автозапуск поддерживается только в Windows.")
+        raise LocalizedOSError("autostart_windows_only")
     command = build_autostart_command(entry_script)
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:
         winreg.SetValueEx(key, VALUE_NAME, 0, winreg.REG_SZ, command)
@@ -61,12 +62,9 @@ def enable(entry_script: Path | None = None) -> None:
 def disable() -> None:
     winreg = _winreg()
     if winreg is None:
-        raise OSError("Автозапуск поддерживается только в Windows.")
+        raise LocalizedOSError("autostart_windows_only")
     try:
-        with winreg.OpenKey(
-            winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE
-        ) as key:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as key:
             winreg.DeleteValue(key, VALUE_NAME)
     except FileNotFoundError:
         pass
-

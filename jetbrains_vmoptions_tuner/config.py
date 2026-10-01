@@ -9,6 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from .localization import DEFAULT_LANGUAGE, normalize_language
 
 APP_DIR_NAME = "JetBrainsVmoptionsTuner"
 CONFIG_FILE_NAME = "config.json"
@@ -19,6 +20,7 @@ def default_config() -> dict[str, Any]:
     return {
         "version": SCHEMA_VERSION,
         "settings": {
+            "language": DEFAULT_LANGUAGE,
             "theme": "system",
             "accent_color": "#4F7CFF",
             "desktop_shortcut": True,
@@ -47,6 +49,7 @@ def _merge_and_sanitize(raw: object) -> dict[str, Any]:
 
     settings = raw.get("settings")
     if isinstance(settings, dict):
+        cfg["settings"]["language"] = normalize_language(settings.get("language"))
         theme = settings.get("theme")
         if theme in {"system", "light", "dark"}:
             cfg["settings"]["theme"] = theme
@@ -56,9 +59,7 @@ def _merge_and_sanitize(raw: object) -> dict[str, Any]:
         desktop_shortcut = settings.get("desktop_shortcut")
         if isinstance(desktop_shortcut, bool):
             cfg["settings"]["desktop_shortcut"] = desktop_shortcut
-        cfg["settings"]["first_run_completed"] = bool(
-            settings.get("first_run_completed", False)
-        )
+        cfg["settings"]["first_run_completed"] = bool(settings.get("first_run_completed", False))
 
     ides = raw.get("ides")
     if isinstance(ides, list):
