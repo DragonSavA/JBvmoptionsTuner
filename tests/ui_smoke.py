@@ -23,6 +23,7 @@ def main() -> int:
 
     from winrt.system import unbox_string
     from winui3.microsoft.ui.xaml import Application, DispatcherTimer
+    from winui3.microsoft.ui.xaml.controls import ScrollViewer
     from winui3.microsoft.windows.applicationmodel.dynamicdependency.bootstrap import initialize
 
     from jetbrains_vmoptions_tuner import desktop_shortcut, ui
@@ -31,6 +32,7 @@ def main() -> int:
 
     errors: list[str] = []
     image_opened = False
+    branding_opened: set[str] = set()
 
     class SmokeApp(ui.App):
         @override
@@ -49,8 +51,22 @@ def main() -> int:
                 self._callbacks = [opened, failed]
                 icon.add_image_opened(opened)
                 icon.add_image_failed(failed)
+                for name in ("AuthorIcon", "CodexIcon", "GitHubIcon"):
+                    brand_image = self._controller._find(self._controller.root, name, ui.Image)
+
+                    def brand_opened(_sender, _args, image_name=name):
+                        branding_opened.add(image_name)
+
+                    self._callbacks.append(brand_opened)
+                    brand_image.add_image_opened(brand_opened)
+                    brand_image.add_image_failed(failed)
+                self._controller.root.update_layout()
+                scroller = self._controller._find(
+                    self._controller.root, "MainScrollViewer", ScrollViewer
+                )
+                scroller.change_view(None, scroller.scrollable_height, None)
                 self._timer = DispatcherTimer()
-                self._timer.interval = timedelta(seconds=2)
+                self._timer.interval = timedelta(seconds=4)
 
                 def verify(_sender, _args):
                     self._timer.stop()
@@ -58,6 +74,17 @@ def main() -> int:
                         controller = self._controller
                         assert image_opened, "Application SVG did not render"
                         assert not errors, errors
+                        assert branding_opened == {"AuthorIcon", "CodexIcon", "GitHubIcon"}, (
+                            branding_opened
+                        )
+                        assert (
+                            controller.repository_link.navigate_uri.absolute_uri
+                            == "https://github.com/DragonSavA/JBvmotionsTuner"
+                        )
+                        assert (
+                            controller.author_link.navigate_uri.absolute_uri
+                            == "https://github.com/DragonSavA?tab=overview"
+                        )
 
                         def verify_language(language):
                             assert controller.language == language
@@ -178,8 +205,17 @@ def main() -> int:
                         controller.desktop_shortcut_toggle.is_on = True
                         assert desktop_shortcut.is_enabled()
                         assert controller.store.load()["settings"]["desktop_shortcut"]
+                        for index, suffix in ((2, "-white"), (1, "")):
+                            controller.theme_picker.selected_index = index
+                            controller.apply_appearance(save=False)
+                            for name, image in (
+                                ("github", controller.github_icon),
+                                ("codex", controller.codex_icon),
+                            ):
+                                uri = image.source.as_(ui.SvgImageSource).uri_source.absolute_uri
+                                assert uri.endswith(f"/{name}{suffix}.svg"), uri
                         print(
-                            "PASS: WinUI, SVG, ENG/RUS translations and persistence, unsaved drafts, desktop toggle",
+                            "PASS: WinUI, author/repository links, branding SVG, light/dark marks, ENG/RUS and persistence, unsaved drafts, desktop toggle",
                             flush=True,
                         )
                     except Exception:

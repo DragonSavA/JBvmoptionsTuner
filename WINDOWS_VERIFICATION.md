@@ -19,7 +19,12 @@ Windows shortcut creation; the PowerShell tests cover interpreter discovery.
 4. Test a project path containing spaces, Cyrillic and `&`. Test a broken or old
    `.venv`: it should be preserved as `.venv.backup-…` and replaced.
 5. Verify that the window is resizable, opens maximized, and displays the VMopT
-   icon in its header, title bar and taskbar, plus version `1.0.0-RC2`.
+   icon in its header, title bar and taskbar, plus version `1.0.0`.
+6. Click the GitHub mark to the right of the version: it should open the project
+   repository in the default browser. Scroll below the trademark notice and check
+   the large development credit, transparent dragon avatar and Codex emblem.
+   Click **DragonSavA**: it should open the author's profile. Verify that the
+   monochrome icons remain visible in both light and dark themes.
 
 ### Interface language
 
@@ -100,7 +105,11 @@ PowerShell-тесты проверяют поиск интерпретатора
 4. Проверьте путь с пробелами, кириллицей и `&`. Повреждённая или старая `.venv`
    должна сохраняться в `.venv.backup-…` перед созданием новой.
 5. Окно должно менять размер, открываться развёрнутым и показывать VMopT в шапке,
-   заголовке и панели задач, а также версию `1.0.0-RC2`.
+   заголовке и панели задач, а также версию `1.0.0`.
+6. Нажмите знак GitHub справа от версии: в браузере должен открыться репозиторий
+   проекта. Под текстом о товарных знаках проверьте крупную подпись, аватар с
+   прозрачным центром и эмблему Codex. Нажатие на **DragonSavA** должно открыть
+   профиль автора. В светлой и тёмной темах монохромные иконки должны быть видны.
 
 ### Язык интерфейса
 

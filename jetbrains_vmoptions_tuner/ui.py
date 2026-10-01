@@ -28,6 +28,7 @@ from winui3.microsoft.ui.xaml.controls import (
     Button,
     ComboBox,
     ComboBoxItem,
+    HyperlinkButton,
     Image,
     InfoBar,
     InfoBarSeverity,
@@ -39,6 +40,7 @@ from winui3.microsoft.ui.xaml.controls import (
     TextBlock,
     TextBox,
     ToggleSwitch,
+    ToolTip,
     XamlControlsResources,
 )
 from winui3.microsoft.ui.xaml.controls.primitives import ToggleButton
@@ -86,6 +88,7 @@ LOCALIZABLE_CONTROLS = {
     "ComboBox": ComboBox,
     "ComboBoxItem": ComboBoxItem,
     "ToggleSwitch": ToggleSwitch,
+    "ToolTip": ToolTip,
 }
 
 
@@ -154,6 +157,14 @@ class MainController:
             Uri(desktop_shortcut.APP_SVG.as_uri())
         )
         self._find(root, "VersionText", TextBlock).text = __version__
+        self.repository_link = self._find(root, "RepositoryLink", HyperlinkButton)
+        self.author_link = self._find(root, "AuthorLink", HyperlinkButton)
+        self.github_icon = self._find(root, "GitHubIcon", Image)
+        self.codex_icon = self._find(root, "CodexIcon", Image)
+        self._find(root, "AuthorIcon", Image).source = SvgImageSource(
+            Uri((ASSET_DIR / "branding" / "dragonsava.svg").as_uri())
+        )
+        self._bind(self.root.add_actual_theme_changed, self.on_actual_theme_changed)
         self.status_info = self._find(root, "StatusInfo", InfoBar)
         self.sync_all_top = self._find(root, "SyncAllTop", Button)
         self.sync_all_bottom = self._find(root, "SyncAllBottom", Button)
@@ -213,6 +224,16 @@ class MainController:
                 setattr(control, property_name, value)
         self.english_language_button.is_checked = self.language == "en"
         self.russian_language_button.is_checked = self.language == "ru"
+
+    def on_actual_theme_changed(self, _sender, _args) -> None:
+        self._refresh_brand_icons()
+
+    def _refresh_brand_icons(self) -> None:
+        suffix = "-white" if self.root.actual_theme == ElementTheme.DARK else ""
+        for control, name in ((self.github_icon, "github"), (self.codex_icon, "codex")):
+            control.source = SvgImageSource(
+                Uri((ASSET_DIR / "branding" / f"{name}{suffix}.svg").as_uri())
+            )
 
     def set_language(self, language: str) -> None:
         language = normalize_language(language)
@@ -381,6 +402,7 @@ class MainController:
             "light": ElementTheme.LIGHT,
             "dark": ElementTheme.DARK,
         }[theme]
+        self._refresh_brand_icons()
         accent_brush = brush(accent)
         text_brush = brush(foreground_for(accent))
         for button in (

@@ -4,7 +4,7 @@
 
 # vmoptions Tuner
 
-**Version: 1.0.0-RC2** · [English](#english) · [Русский](#русский)
+**Version: 1.0.0** · [English](#english) · [Русский](#русский)
 
 ## English
 
@@ -18,7 +18,8 @@ JetBrains Client. Each product can be bound to a manually selected `.vmoptions` 
 
 ### Installation and launch
 
-1. [Download the project ZIP](https://github.com/DragonSavA/JBvmotionsTuner/archive/HEAD.zip)
+1. Download the ZIP asset from [the latest release](https://github.com/DragonSavA/JBvmotionsTuner/releases/latest),
+   or [download the project ZIP](https://github.com/DragonSavA/JBvmotionsTuner/archive/HEAD.zip)
    using **Code → Download ZIP** on GitHub, or clone the repository:
 
    ```powershell
@@ -99,6 +100,10 @@ Removing the shortcut never prevents launching through `start.bat` or `main.py`.
 While enabled, a missing shortcut is restored on the next launch. You can also
 select the system, light or dark theme and set an accent colour as `#RRGGBB`.
 
+The GitHub icon next to the version opens the project repository. The footer
+credits **DragonSavA with Codex**; clicking **DragonSavA** opens the author's GitHub
+profile. The credit follows your selected interface language.
+
 ### Files, updates and limitations
 
 - Settings, language, IDE paths, option sets and the desktop shortcut preference are stored
@@ -111,7 +116,7 @@ select the system, light or dark theme and set an accent colour as `#RRGGBB`.
   If the old shortcut remains on your desktop, launch the moved batch file directly.
 - To update, replace the project files in the same folder and run `start.bat` again.
   Keep your `.venv`; the launcher will check dependencies. Your settings stay in
-  Local AppData. `1.0.0-RC2` also reads configurations from earlier versions;
+  Local AppData. `1.0.0` also reads configurations from earlier versions;
   configurations without a language preference use English.
 - The application runs with your current permissions. Pick a `.vmoptions` file you
   can write to; no permissions are elevated to edit IDE files. Synchronization
@@ -144,6 +149,30 @@ Core tests also run outside Windows; Windows shell tests are skipped there.
 without opening the window. The remaining UI checks are in
 [WINDOWS_VERIFICATION.md](WINDOWS_VERIFICATION.md).
 
+### Continuous integration and releases
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) runs automatically
+for pushes and pull requests to `master`. It installs dependencies, checks them,
+runs all unit tests and Windows integration tests, and verifies the PowerShell
+launcher and batch file on Windows with **Python 3.13 and 3.14**.
+
+After both test jobs pass, a push to `master` publishes a source ZIP and its
+SHA-256 checksum in [GitHub Releases](https://github.com/DragonSavA/JBvmotionsTuner/releases).
+The archive is made with `git archive` from the tested commit, with a single
+`JBvmotionsTuner-<version>/` top-level folder. Local environments and untracked
+files are excluded. Each commit gets a separate tag, `v<version>-<12-character SHA>`;
+rerunning the same commit refreshes its assets. Only the current `master` commit
+can be marked as the latest release, so an older run cannot replace it.
+Pull requests run tests without publishing. You can also run the workflow manually
+from the **Actions** tab; publication is available for `master`.
+
+The workflow uses GitHub's automatic `GITHUB_TOKEN`; no personal token or additional
+repository secrets are needed. Only the release job receives `contents: write`.
+The interactive WinUI smoke test remains a local check described in
+[WINDOWS_VERIFICATION.md](WINDOWS_VERIFICATION.md).
+
+### Application icon and project files
+
 `vmopt.svg` is the original source for the application icon. To regenerate the
 multi-size Windows ICO with Microsoft Edge and Windows’ built-in drawing tools:
 
@@ -157,6 +186,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_icon.ps1
 | `main.py`, `bootstrap.py` | Direct/background entry point and prerequisite checks |
 | `ui.py`, `main_window.xaml` | WinUI 3 interface |
 | `localization.py` | English and Russian translations and UI bindings |
+| `.github/workflows/release.yml`, `scripts/build_release.py` | Windows CI and source ZIP publication |
 | `desktop_shortcut.py`, `autostart.py` | Desktop shortcut and sign-in registration |
 | `sync.py`, `config.py`, `background.py` | File synchronization, settings and silent execution |
 | `catalog.py`, `assets/` | Product catalogue, product icons and the application icon |
@@ -186,7 +216,8 @@ Gateway и JetBrains Client. Для каждого продукта `.vmoptions`
 
 ### Установка и запуск
 
-1. [Скачайте ZIP проекта](https://github.com/DragonSavA/JBvmotionsTuner/archive/HEAD.zip)
+1. Скачайте ZIP-архив из [последнего релиза](https://github.com/DragonSavA/JBvmotionsTuner/releases/latest)
+   или [ZIP проекта](https://github.com/DragonSavA/JBvmotionsTuner/archive/HEAD.zip)
    через **Code → Download ZIP** на GitHub или клонируйте репозиторий:
 
    ```powershell
@@ -271,6 +302,10 @@ Windows App Runtime. Подробности:
 следующем запуске. Можно выбрать системную, светлую или тёмную тему и акцентный
 цвет в формате `#RRGGBB`.
 
+Иконка GitHub справа от версии открывает репозиторий проекта. Внизу окна находится
+подпись **«Разработано DragonSavA с помощью Codex»**; нажатие на **DragonSavA**
+открывает GitHub-профиль автора. Подпись меняется вместе с языком интерфейса.
+
 ### Данные, обновления и ограничения
 
 - Настройки, язык, пути к IDE, наборы строк и состояние тумблера ярлыка хранятся вне
@@ -284,7 +319,7 @@ Windows App Runtime. Подробности:
   напрямую.
 - Для обновления замените файлы проекта в той же папке и снова запустите
   `start.bat`. Сохраните `.venv`: файл запуска проверит зависимости. Настройки
-  остаются в Local AppData. Версия `1.0.0-RC2` читает конфигурации прежних версий;
+  остаются в Local AppData. Версия `1.0.0` читает конфигурации прежних версий;
   если язык в них ещё не указан, используется английский.
 - Приложение работает с вашими текущими правами. Выбирайте `.vmoptions`, доступный
   вам на запись; приложение не повышает права для редактирования файлов IDE.
@@ -319,6 +354,30 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_launcher.ps1 -Pyt
 открывая окно. Остальные проверки интерфейса описаны в
 [WINDOWS_VERIFICATION.md](WINDOWS_VERIFICATION.md).
 
+### CI и публикация релизов
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) запускается при
+push и pull request в `master`. В Windows с **Python 3.13 и 3.14** устанавливаются
+и проверяются зависимости, выполняются все модульные и интеграционные тесты
+Windows, проверяются PowerShell-файл запуска и `.bat`.
+
+После успешного завершения обоих заданий push в `master` публикует ZIP исходников
+и его контрольную сумму SHA-256 в [GitHub Releases](https://github.com/DragonSavA/JBvmotionsTuner/releases).
+Архив создаётся через `git archive` из проверенного коммита; внутри — одна папка
+`JBvmotionsTuner-<версия>/`. Локальные окружения и неотслеживаемые файлы не попадают
+в архив. Каждый коммит получает отдельный тег `v<версия>-<12 символов SHA>`;
+повторный запуск для того же коммита обновляет его файлы. Только текущий коммит
+`master` может стать последним релизом, поэтому более старый запуск его не заменит.
+Pull request запускает проверки без публикации. Ручной запуск доступен во вкладке
+**Actions**; публикация разрешена для `master`.
+
+Используется автоматически выдаваемый GitHub `GITHUB_TOKEN`: личный токен и
+дополнительные секреты репозитория не нужны. Право `contents: write` получает только
+задание публикации. Интерактивный тест окна WinUI остаётся локальной проверкой,
+описанной в [WINDOWS_VERIFICATION.md](WINDOWS_VERIFICATION.md).
+
+### Иконка приложения и структура проекта
+
 Исходник иконки — `vmopt.svg`. Для пересоздания Windows ICO с несколькими размерами
 используются Microsoft Edge и встроенные средства рисования Windows:
 
@@ -332,6 +391,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_icon.ps1
 | `main.py`, `bootstrap.py` | Прямой/фоновый запуск и проверка зависимостей |
 | `ui.py`, `main_window.xaml` | Интерфейс WinUI 3 |
 | `localization.py` | Английские и русские переводы и привязки к интерфейсу |
+| `.github/workflows/release.yml`, `scripts/build_release.py` | CI в Windows и публикация ZIP исходников |
 | `desktop_shortcut.py`, `autostart.py` | Ярлык и регистрация запуска при входе |
 | `sync.py`, `config.py`, `background.py` | Синхронизация файлов, настройки и тихий режим |
 | `catalog.py`, `assets/` | Каталог продуктов, их иконки и иконка приложения |

@@ -10,6 +10,9 @@ LANGUAGES = ("en", "ru")
 
 MESSAGES = {
     "en": {
+        "developed_by": "Developed by",
+        "with_codex": "with Codex",
+        "repository_link": "Open the project on GitHub",
         "tagline": "Your JetBrains IDE settings stay in place after every update.",
         "settings": "Settings",
         "language": "Language",
@@ -103,6 +106,9 @@ MESSAGES = {
         "shortcut_failed": "Windows could not create the vmoptions Tuner desktop shortcut.",
     },
     "ru": {
+        "developed_by": "Разработал",
+        "with_codex": "с помощью Codex",
+        "repository_link": "Открыть проект на GitHub",
         "tagline": "Ваши настройки JetBrains IDE — на месте после каждого обновления.",
         "settings": "Настройки",
         "language": "Язык",
@@ -200,6 +206,9 @@ MESSAGES = {
 # (WinUI class, named XAML element, Python property, translation key).
 # The same bindings update an existing window without rebuilding its controls.
 XAML_STRINGS = (
+    ("TextBlock", "DevelopedByText", "text", "developed_by"),
+    ("TextBlock", "WithCodexText", "text", "with_codex"),
+    ("ToolTip", "RepositoryToolTip", "content", "repository_link"),
     ("TextBlock", "TaglineText", "text", "tagline"),
     ("TextBlock", "SettingsTitle", "text", "settings"),
     ("TextBlock", "LanguageLabel", "text", "language"),

@@ -1,6 +1,6 @@
 [project]
 name = "jetbrains-vmoptions-tuner"
-version = "1.0.0-RC2"
+version = "1.0.0"
 description = "WinUI 3 editor and automatic restorer for JetBrains .vmoptions files"
 requires-python = ">=3.13"
 license = { text = "MIT" }
@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [tool.setuptools.package-data]
-jetbrains_vmoptions_tuner = ["main_window.xaml", "*.ps1", "assets/*.svg", "assets/*.ico", "assets/README.md"]
+jetbrains_vmoptions_tuner = ["main_window.xaml", "*.ps1", "assets/*.svg", "assets/*.ico", "assets/README.md", "assets/branding/*.svg", "assets/branding/*.txt"]
 
 [tool.ruff]
 line-length = 100

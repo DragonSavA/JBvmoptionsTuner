@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Codex terminal emblem</title>
+  <g stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8" y="10" width="48" height="44" rx="10" stroke-width="3"/>
+    <path d="m20 24 8 8-8 8m15 0h10" stroke-width="4"/>
+  </g>
+</svg>

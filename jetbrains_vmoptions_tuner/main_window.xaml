@@ -2,7 +2,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
             <StackPanel MaxWidth="1440" Margin="40,32,40,44" Spacing="26">
                 <Grid ColumnSpacing="28">
                     <Grid.ColumnDefinitions>
@@ -14,7 +14,18 @@
                             <Image x:Name="AppIcon" Width="56" Height="56"/>
                             <StackPanel Spacing="2" VerticalAlignment="Center">
                                 <TextBlock Text="vmoptions Tuner" FontSize="32" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="VersionText" FontSize="12" Opacity="0.62"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock x:Name="VersionText" FontSize="12" Opacity="0.62"
+                                               VerticalAlignment="Center"/>
+                                    <HyperlinkButton x:Name="RepositoryLink" Padding="4"
+                                                     NavigateUri="https://github.com/DragonSavA/JBvmotionsTuner"
+                                                     AutomationProperties.Name="GitHub">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip x:Name="RepositoryToolTip" Content="Open the project on GitHub"/>
+                                        </ToolTipService.ToolTip>
+                                        <Image x:Name="GitHubIcon" Width="24" Height="24"/>
+                                    </HyperlinkButton>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                         <TextBlock x:Name="TaglineText" Text="Your JetBrains IDE settings stay in place after every update."
@@ -237,6 +248,18 @@
                                Opacity="0.62" FontSize="12" TextAlignment="Center"
                                TextWrapping="Wrap"/>
                 </Border>
+                <StackPanel x:Name="DevelopmentCredit" Orientation="Horizontal" Spacing="12"
+                            HorizontalAlignment="Center" Margin="0,4,0,0">
+                    <Image x:Name="AuthorIcon" Width="76" Height="76"/>
+                    <TextBlock x:Name="DevelopedByText" Text="Developed by" FontSize="28"
+                               FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <HyperlinkButton x:Name="AuthorLink" Content="DragonSavA" FontSize="28"
+                                     FontWeight="SemiBold" Padding="0" VerticalAlignment="Center"
+                                     NavigateUri="https://github.com/DragonSavA?tab=overview"/>
+                    <TextBlock x:Name="WithCodexText" Text="with Codex" FontSize="28"
+                               FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <Image x:Name="CodexIcon" Width="64" Height="64"/>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
     </Grid>

@@ -1,0 +1,106 @@
+name: Test and publish source release
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Windows / Python ${{ matrix.python-version }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.13', '3.14']
+    steps:
+      - name: Check out tested commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install application dependencies
+        run: 'python -m pip install --only-binary=:all: -r requirements.txt'
+      - name: Check dependencies
+        run: python -m pip check
+      - name: Run unit and Windows integration tests
+        run: python -m unittest discover -s tests -v
+      - name: Verify launcher and batch file
+        shell: pwsh
+        run: |
+          $pythonExecutable = (Get-Command python).Source
+          powershell -NoProfile -ExecutionPolicy Bypass -File tests/test_launcher.ps1 -PythonExecutable $pythonExecutable
+          if ($LASTEXITCODE -ne 0) { throw 'Launcher tests failed.' }
+
+  release:
+    name: Publish tested source ZIP
+    needs: test
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Check out tested commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Archive committed sources and compute SHA-256
+        run: python scripts/build_release.py
+      - name: Publish GitHub Release
+        shell: pwsh
+        run: |
+          $metadata = Get-Content -LiteralPath dist/release.json -Raw | ConvertFrom-Json
+          $notes = @"
+          Source snapshot for vmoptions Tuner $($metadata.version).
+          Commit: $($metadata.commit)
+
+          Download the ZIP asset, extract it to a permanent folder and run start.bat.
+          The launcher installs Python 3.13+ and dependencies when required.
+          The .sha256 asset contains the ZIP checksum.
+
+          Скачайте ZIP-архив релиза, распакуйте в постоянную папку и запустите start.bat.
+          Файл запуска при необходимости установит Python 3.13+ и зависимости.
+          Контрольная сумма ZIP находится в файле .sha256.
+          "@
+          $notesPath = Join-Path $env:RUNNER_TEMP 'vmopt-release-notes.md'
+          [IO.File]::WriteAllText($notesPath, $notes, [Text.UTF8Encoding]::new($false))
+
+          $draftState = gh release view $metadata.tag --json isDraft --jq '.isDraft' 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            $wasDraft = $draftState -eq 'true'
+            gh release upload $metadata.tag $metadata.archive $metadata.checksum --clobber
+            if ($LASTEXITCODE -ne 0) { throw 'Release asset upload failed.' }
+          } else {
+            $wasDraft = $true
+            gh release create $metadata.tag $metadata.archive $metadata.checksum --target $metadata.commit --title "vmoptions Tuner $($metadata.version) ($($metadata.commit.Substring(0, 12)))" --notes-file $notesPath --draft
+            if ($LASTEXITCODE -ne 0) { throw 'Release creation failed.' }
+          }
+
+          # A slower older run must not replace the latest release of master.
+          $masterCommit = gh api "repos/$env:GH_REPO/git/ref/heads/master" --jq '.object.sha'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify the current master commit.' }
+          if ($masterCommit -eq $metadata.commit) {
+            gh release edit $metadata.tag --draft=false --latest
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot publish the latest release.' }
+          } elseif ($wasDraft) {
+            gh release edit $metadata.tag --draft=false --latest=false
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot publish the source release.' }
+          }

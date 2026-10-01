@@ -96,6 +96,7 @@ class TranslationTests(unittest.TestCase):
                 self.assertEqual(element.attrib[attributes[prop]], translate(key))
                 bound.add((name, attributes[prop]))
         invariant = {
+            "DragonSavA",
             "vmoptions Tuner",
             "ENG",
             "RUS",

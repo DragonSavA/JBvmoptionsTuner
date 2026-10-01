@@ -138,6 +138,28 @@ class AssetsAndMetadataTests(unittest.TestCase):
         project = tomllib.loads(project_path.read_text(encoding="utf-8"))
         self.assertEqual(project["project"]["version"], __version__)
 
+    def test_branding_svg_assets_are_valid_and_contain_no_remote_content(self) -> None:
+        asset_dir = Path(__file__).parents[1] / "jetbrains_vmoptions_tuner" / "assets" / "branding"
+        for filename in (
+            "dragonsava.svg",
+            "github.svg",
+            "github-white.svg",
+            "codex.svg",
+            "codex-white.svg",
+        ):
+            with self.subTest(filename=filename):
+                root = ET.parse(asset_dir / filename).getroot()
+                self.assertTrue(root.tag.endswith("svg"))
+                self.assertIn("viewBox", root.attrib)
+                identifiers = {element.get("id") for element in root.iter() if element.get("id")}
+                for element in root.iter():
+                    self.assertFalse(element.tag.endswith(("image", "script")))
+                    for attribute, value in element.attrib.items():
+                        if attribute.endswith("href"):
+                            self.assertTrue(value.startswith("#"))
+                        if value.startswith("url(#"):
+                            self.assertIn(value[5:-1], identifiers)
+
 
 if __name__ == "__main__":
     unittest.main()
